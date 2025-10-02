@@ -1,0 +1,46 @@
+# OS/editor
+.DS_Store
+.Rhistory
+.RData
+.Rapp.history
+
+# Local env
+.vscode/
+.Rproj.user/
+
+# Temporary and cache files
+*.tmp
+*.log
+*.cache
+
+# SQLite temporary files
+*.sqlite-shm
+*.sqlite-wal
+
+# Big data and generated outputs - but allow core app files
+data/tissue_build/**
+data/peaks/**
+data/liftover/**
+data/regulatory/**
+data/chains/*.gz
+data/mouse_np/**
+
+# Keep essential app.R data files (managed by Git LFS):
+# - data/regland.sqlite*
+# - data/expression_tpm.tsv
+# - data/gwas_hg38_with_category.tsv
+# - data/enhancer_labels.tsv
+# - data/gencode.v46.annotation.gtf.gz
+# - data/gwas/clean/*.parquet
+# - data/expression/*/sample_metadata.csv
+
+# Keep code/config files
+!data/chains/README.md
+!data/README.md
+
+# Artifacts (we'll upload to Releases instead)
+artifacts/**
+work/**
+
+# Binaries: keep wrappers, ignore actual vendored executables
+bin/*.bin

@@ -298,18 +298,90 @@ def export_data(request):
 
 
 # Additional utility views for CTCF and 3D analysis
-@api_view(['GET'])
+@api_view(['POST'])
 def ctcf_analysis(request):
     """Perform CTCF and 3D domain analysis"""
-    gene_symbol = request.GET.get('gene', 'BDNF').upper()
-    species_id = request.GET.get('species', 'human_hg38')
-    link_mode = request.GET.get('link_mode', 'tss')
-    tss_kb = int(request.GET.get('tss_kb', 250))
+    from .utils import (
+        get_domain_region, get_ctcf_data_in_region, get_enhancers_in_domain,
+        get_gwas_in_enhancers_domain, create_ctcf_tracks_plot, 
+        create_ctcf_distance_plot, create_enhancers_per_domain_plot,
+        create_expression_association_plot, create_gwas_partition_table,
+        create_ctcf_sites_table
+    )
     
-    # Implementation for CTCF analysis
-    # This would replicate the CTCF & 3D tab functionality
-    
-    return Response({'message': 'CTCF analysis to be implemented'})
+    try:
+        data = request.data
+        gene_symbol = data.get('gene', 'BDNF').upper()
+        species_id = data.get('species', 'human_hg38')
+        tss_kb = int(data.get('tss_kb', 100))
+        
+        # CTCF-specific parameters
+        link_mode = data.get('link_mode', 'tss')
+        tss_kb_ctcf = int(data.get('tss_kb_ctcf', 250))
+        domain_snap_tss = data.get('domain_snap_tss', True)
+        ctcf_cons_groups = data.get('ctcf_cons_groups', ['conserved', 'human_specific'])
+        enh_cons_groups = data.get('enh_cons_groups', ['conserved', 'gained', 'lost', 'unlabeled'])
+        ctcf_dist_cap_kb = int(data.get('ctcf_dist_cap_kb', 250))
+        
+        # Get base gene region
+        from .utils import get_gene_region
+        gene_data = get_gene_region(gene_symbol, species_id, tss_kb)
+        if not gene_data:
+            return Response({'error': 'Gene not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get domain region based on link mode
+        domain_region = get_domain_region(
+            gene_data, link_mode, tss_kb_ctcf, domain_snap_tss, species_id
+        )
+        
+        # Get CTCF sites in domain
+        ctcf_sites = get_ctcf_data_in_region(
+            species_id, domain_region['chrom'], 
+            domain_region['start'], domain_region['end'],
+            ctcf_cons_groups
+        )
+        
+        # Get enhancers in domain
+        enhancers = get_enhancers_in_domain(
+            species_id, domain_region['chrom'],
+            domain_region['start'], domain_region['end'],
+            enh_cons_groups
+        )
+        
+        # Get GWAS SNPs in enhancers
+        gwas_snps = get_gwas_in_enhancers_domain(
+            species_id, domain_region['chrom'],
+            domain_region['start'], domain_region['end']
+        )
+        
+        # Create visualizations
+        tracks_plot = create_ctcf_tracks_plot(domain_region, enhancers, ctcf_sites)
+        distance_plot = create_ctcf_distance_plot(enhancers, ctcf_sites, domain_region, ctcf_dist_cap_kb)
+        enhancers_plot = create_enhancers_per_domain_plot(enhancers)
+        expression_plot = create_expression_association_plot(enhancers, gene_symbol)
+        gwas_table = create_gwas_partition_table(enhancers, gwas_snps)
+        ctcf_table = create_ctcf_sites_table(ctcf_sites)
+        
+        return Response({
+            'domain_region': domain_region,
+            'ctcf_sites': ctcf_sites[:20],  # Limit for response size
+            'enhancers': enhancers[:50],    # Limit for response size
+            'gwas_snps': gwas_snps[:50],    # Limit for response size
+            'tracks_plot': tracks_plot,
+            'distance_plot': distance_plot,
+            'enhancers_plot': enhancers_plot,
+            'expression_plot': expression_plot,
+            'gwas_table': gwas_table,
+            'ctcf_table': ctcf_table,
+            'stats': {
+                'ctcf_count': len(ctcf_sites),
+                'enhancer_count': len(enhancers),
+                'gwas_snp_count': len(gwas_snps)
+            }
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])

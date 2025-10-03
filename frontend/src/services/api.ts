@@ -213,4 +213,19 @@ export const healthCheck = async (): Promise<{ status: string; message: string }
   return response.data;
 };
 
+export const getCTCFAnalysis = async (params: {
+  gene: string;
+  species: string;
+  tss_kb: number;
+  link_mode: string;
+  tss_kb_ctcf: number;
+  domain_snap_tss: boolean;
+  ctcf_cons_groups: string[];
+  enh_cons_groups: string[];
+  ctcf_dist_cap_kb: number;
+}): Promise<any> => {
+  const response = await api.post('/analysis/ctcf/', params);
+  return response.data;
+};
+
 export default api;

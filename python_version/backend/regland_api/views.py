@@ -1,0 +1,318 @@
+import json
+import os
+import sqlite3
+from django.db import connection
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+import io
+import base64
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.utils import PlotlyJSONEncoder
+
+from .models import Gene, Enhancer, EnhancerClass, GWASSnp, CTCFSite, TADDomain
+from .utils import (
+    get_gene_region,
+    get_enhancers_in_region,
+    get_gwas_snps_in_region,
+    get_ctcf_sites_in_region,
+    create_genome_tracks_plot,
+    create_conservation_heatmap,
+    get_expression_data,
+    create_expression_plot,
+    get_ucsc_url,
+    get_enhancers_in_region_optimized,
+    get_gwas_snps_in_region_optimized,
+    get_ctcf_sites_in_region_optimized,
+    create_genome_tracks_plot_optimized,
+    create_conservation_heatmap_optimized
+)
+
+
+@api_view(['POST'])
+def combined_gene_data(request):
+    """Get all gene data in a single optimized request"""
+    try:
+        data = request.data
+        gene_symbol = data.get('gene', 'BDNF').upper()
+        species_id = data.get('species', 'human_hg38')
+        tissue = data.get('tissue', 'Liver')
+        tss_kb = int(data.get('tss_kb', 100))
+        enhancer_classes = data.get('classes', ['conserved', 'gained', 'lost', 'unlabeled'])
+        nbins = int(data.get('nbins', 30))
+        normalize_rows = data.get('normalize_rows', False)
+        mark_tss = data.get('mark_tss', True)
+        stack_tracks = data.get('stack_tracks', True)
+        show_gene = data.get('show_gene', True)
+        show_snps = data.get('show_snps', True)
+        log_expression = data.get('log_expression', False)
+        
+        # Get gene information once
+        gene_data = get_gene_region(gene_symbol, species_id, tss_kb)
+        if not gene_data:
+            return Response({'error': 'Gene not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get all region data in parallel using optimized queries
+        from .utils import get_combined_region_data
+        
+        region_results = get_combined_region_data(
+            gene_data, species_id, tissue, enhancer_classes,
+            nbins, normalize_rows, mark_tss, stack_tracks, 
+            show_gene, show_snps, log_expression
+        )
+        
+        return Response({
+            'regionData': region_results['region_data'],
+            'matrixData': region_results['matrix_data'],
+            'tracksData': region_results['tracks_data'],
+            'exprData': region_results['expr_data']
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def gene_search(request):
+    """Search for genes by symbol"""
+    query = request.GET.get('q', '').upper()
+    species_id = request.GET.get('species', 'human_hg38')
+    
+    if not query:
+        return Response({'genes': []})
+    
+    # Get genes matching the query
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT gene_id, symbol, species_id, chrom, start, end
+            FROM genes
+            WHERE UPPER(symbol) LIKE %s AND species_id = %s
+            LIMIT 10
+        """, [f'%{query}%', species_id])
+        
+        columns = [col[0] for col in cursor.description]
+        genes = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    
+    return Response({'genes': genes})
+
+
+@api_view(['GET'])
+def gene_region_data(request):
+    """Get comprehensive data for a gene region with performance optimizations"""
+    gene_symbol = request.GET.get('gene', 'BDNF').upper()
+    species_id = request.GET.get('species', 'human_hg38')
+    tissue = request.GET.get('tissue', 'Liver')
+    tss_kb = int(request.GET.get('tss_kb', 100))
+    enhancer_classes = request.GET.getlist('classes[]') or ['conserved', 'gained', 'lost', 'unlabeled']
+    
+    try:
+        # Get gene information
+        gene_data = get_gene_region(gene_symbol, species_id, tss_kb)
+        if not gene_data:
+            return Response({'error': 'Gene not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Use optimized single-connection approach
+        with connection.cursor() as cursor:
+            # Get enhancers in region (limited for performance)
+            enhancers = get_enhancers_in_region_optimized(
+                cursor, species_id, gene_data['chrom'], 
+                gene_data['start'], gene_data['end'],
+                tissue, enhancer_classes
+            )
+            
+            # Get GWAS SNPs (limited for performance)
+            gwas_snps = get_gwas_snps_in_region_optimized(
+                cursor, gene_data['gene_id'], gene_data['chrom'],
+                gene_data['start'], gene_data['end']
+            )
+            
+            # Get CTCF sites (limited for performance)
+            ctcf_sites = get_ctcf_sites_in_region_optimized(
+                cursor, species_id, gene_data['chrom'],
+                gene_data['start'], gene_data['end']
+            )
+        
+        return Response({
+            'gene': gene_data,
+            'enhancers': enhancers,
+            'gwas_snps': gwas_snps,
+            'ctcf_sites': ctcf_sites,
+            'ucsc_url': get_ucsc_url(species_id, gene_data['chrom'], gene_data['start'], gene_data['end'])
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def conservation_matrix(request):
+    """Generate conservation matrix data"""
+    gene_symbol = request.GET.get('gene', 'BDNF').upper()
+    species_id = request.GET.get('species', 'human_hg38')
+    tissue = request.GET.get('tissue', 'Liver')
+    tss_kb = int(request.GET.get('tss_kb', 100))
+    nbins = int(request.GET.get('nbins', 30))
+    enhancer_classes = request.GET.getlist('classes[]') or ['conserved', 'gained', 'lost', 'unlabeled']
+    normalize_rows = request.GET.get('norm_rows', 'false').lower() == 'true'
+    
+    try:
+        # Get gene region
+        gene_data = get_gene_region(gene_symbol, species_id, tss_kb)
+        if not gene_data:
+            return Response({'error': 'Gene not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Generate conservation matrix data
+        matrix_data = create_conservation_heatmap(
+            species_id, gene_data['chrom'], gene_data['start'], gene_data['end'],
+            tissue, enhancer_classes, nbins, normalize_rows, gene_data
+        )
+        
+        return Response(matrix_data)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def genome_tracks_plot(request):
+    """Generate genome tracks visualization with performance optimizations"""
+    gene_symbol = request.GET.get('gene', 'BDNF').upper()
+    species_id = request.GET.get('species', 'human_hg38')
+    tissue = request.GET.get('tissue', 'Liver')
+    tss_kb = int(request.GET.get('tss_kb', 100))
+    enhancer_classes = request.GET.getlist('classes[]') or ['conserved', 'gained', 'lost', 'unlabeled']
+    stack_tracks = request.GET.get('stack_tracks', 'true').lower() == 'true'
+    show_gene = request.GET.get('show_gene', 'true').lower() == 'true'
+    show_snps = request.GET.get('show_snps', 'true').lower() == 'true'
+    
+    try:
+        # Get gene region
+        gene_data = get_gene_region(gene_symbol, species_id, tss_kb)
+        if not gene_data:
+            return Response({'error': 'Gene not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get optimized data using single connection
+        with connection.cursor() as cursor:
+            enhancers = get_enhancers_in_region_optimized(
+                cursor, species_id, gene_data['chrom'], 
+                gene_data['start'], gene_data['end'],
+                tissue, enhancer_classes
+            )
+            
+            gwas_snps = get_gwas_snps_in_region_optimized(
+                cursor, gene_data['gene_id'], gene_data['chrom'],
+                gene_data['start'], gene_data['end']
+            )
+        
+        # Create optimized plot
+        plot_data = create_genome_tracks_plot_optimized(
+            gene_data, enhancers, gwas_snps,
+            stack_tracks, show_gene, show_snps
+        )
+        
+        return Response(plot_data)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def expression_data(request):
+    """Get expression data for a gene"""
+    gene_symbol = request.GET.get('gene', 'BDNF').upper()
+    log_scale = request.GET.get('log_scale', 'false').lower() == 'true'
+    
+    try:
+        # Get expression data
+        expr_data = get_expression_data(gene_symbol, log_scale)
+        
+        # Create expression plot
+        plot_data = create_expression_plot(expr_data, gene_symbol, log_scale)
+        
+        return Response({
+            'expression_data': expr_data,
+            'plot_data': plot_data
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def species_list(request):
+    """Get list of available species"""
+    species = [
+        {'id': 'human_hg38', 'name': 'Human (hg38)'},
+        {'id': 'mouse_mm39', 'name': 'Mouse (mm39)'},
+        {'id': 'macaque_rheMac10', 'name': 'Macaque (rheMac10)'},
+        {'id': 'chicken_galGal6', 'name': 'Chicken (galGal6)'},
+        {'id': 'pig_susScr11', 'name': 'Pig (susScr11)'}
+    ]
+    return Response({'species': species})
+
+
+@api_view(['GET'])
+def gene_presets(request):
+    """Get gene presets for different tissues"""
+    presets = {
+        'brain': {
+            'tissue': 'Brain',
+            'genes': ['BDNF', 'SCN1A', 'GRIN2B', 'DRD2', 'APOE']
+        },
+        'heart': {
+            'tissue': 'Heart', 
+            'genes': ['TTN', 'MYH6', 'MYH7', 'PLN', 'KCNQ1']
+        },
+        'liver': {
+            'tissue': 'Liver',
+            'genes': ['ALB', 'APOB', 'CYP3A4', 'HNF4A', 'PCSK9']
+        }
+    }
+    return Response({'presets': presets})
+
+
+@api_view(['GET'])
+def gwas_categories(request):
+    """Get available GWAS categories"""
+    categories = ['Alcohol', 'BMI', 'Inflammation']
+    return Response({'categories': categories})
+
+
+@api_view(['POST'])
+def export_data(request):
+    """Export data in various formats"""
+    export_type = request.data.get('type', 'csv')
+    data_type = request.data.get('data_type', 'gwas')
+    
+    # Implementation for data export
+    # This would generate CSV, PNG, or other formats based on request
+    
+    return Response({'message': 'Export functionality to be implemented'})
+
+
+# Additional utility views for CTCF and 3D analysis
+@api_view(['GET'])
+def ctcf_analysis(request):
+    """Perform CTCF and 3D domain analysis"""
+    gene_symbol = request.GET.get('gene', 'BDNF').upper()
+    species_id = request.GET.get('species', 'human_hg38')
+    link_mode = request.GET.get('link_mode', 'tss')
+    tss_kb = int(request.GET.get('tss_kb', 250))
+    
+    # Implementation for CTCF analysis
+    # This would replicate the CTCF & 3D tab functionality
+    
+    return Response({'message': 'CTCF analysis to be implemented'})
+
+
+@api_view(['GET'])
+def health_check(request):
+    """Health check endpoint"""
+    return Response({'status': 'healthy', 'message': 'Regland API is running'})

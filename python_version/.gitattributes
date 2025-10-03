@@ -1,0 +1,101 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Python files
+*.py text eol=lf
+*.pyx text eol=lf
+*.pyi text eol=lf
+
+# Django files
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+
+# Configuration files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+*.conf text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.rst text eol=lf
+*.txt text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+
+# Requirements and lock files
+requirements*.txt text eol=lf
+Pipfile text eol=lf
+Pipfile.lock text eol=lf
+package.json text eol=lf
+package-lock.json text eol=lf
+yarn.lock text eol=lf
+
+# Data files (mark as binary to prevent git from trying to merge them)
+*.sqlite binary
+*.sqlite3 binary
+*.db binary
+*.csv binary
+*.tsv binary
+*.xlsx binary
+*.xls binary
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+
+# Archives
+*.zip binary
+*.tar binary
+*.tar.gz binary
+*.tgz binary
+*.rar binary
+*.7z binary
+
+# Fonts
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+
+# Other binary files
+*.pdf binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+
+# Jupyter notebooks (treat as text but don't perform LF normalization due to output cells)
+*.ipynb text
+
+# Environment files (sensitive, should be text but with specific handling)
+.env* text eol=lf
+
+# Linguist overrides (for GitHub language detection)
+*.html linguist-language=HTML
+*.css linguist-language=CSS
+*.js linguist-language=JavaScript
+*.ts linguist-language=TypeScript
+*.tsx linguist-language=TypeScript
+*.py linguist-language=Python
+
+# Mark generated files
+frontend/build/* linguist-generated=true
+*/migrations/*.py linguist-generated=true
+*/__pycache__/* linguist-generated=true
+*.pyc linguist-generated=true

@@ -84,7 +84,7 @@ WSGI_APPLICATION = 'regland_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR.parent.parent / 'data' / 'regland.sqlite',
+        'NAME': BASE_DIR / os.getenv('DATABASE_PATH', '../database/regland.sqlite'),
     }
 }
 

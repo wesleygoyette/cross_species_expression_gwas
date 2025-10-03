@@ -1,270 +1,185 @@
-# Regulatory Landscapes: Interactive Genome Browser & Conservation Analysis
+# Regulatory Landscapes
 
-A comprehensive Shiny web application for exploring regulatory element conservation, gene expression, and GWAS associations across multiple species. This tool integrates enhancer data, chromatin architecture (CTCF/TADs), gene expression, and genome-wide association study (GWAS) results to provide a multi-dimensional view of genomic regulation.
+This is a modern web application for exploring evolutionary conservation of gene regulatory landscapes across species. Originally developed as an R Shiny application, it has been completely rewritten using a Python/Django backend with a React/TypeScript frontend to provide better performance, scalability, and user experience.
 
-## 🎯 Project Overview
+## Features
 
-This application enables researchers to:
-- **Visualize enhancer conservation** across species (Human, Mouse, Macaque, Chicken, Pig)
-- **Analyze gene expression patterns** across tissues (Brain, Heart, Liver)
-- **Explore GWAS associations** linked to regulatory elements
-- **Examine 3D chromatin architecture** through CTCF binding sites and TADs
-- **Generate publication-ready plots** and export data
+- **Explore Genes**: Visualize enhancer conservation, expression and GWAS overlap around genes
+- **Conservation Map**: View across-species conservation patterns in regulatory landscapes  
+- **CTCF & 3D**: Analyze CTCF binding sites and 3D domain organization
+- **Expression**: Compare gene expression across tissues and species
+- **GWAS Analysis**: Explore GWAS hits and trait associations in regulatory regions
+- **Downloads**: Export data and visualizations for further analysis
 
-## 🏗️ Architecture & Implementation
+## Technology Stack
 
-### Core Technologies
-- **R Shiny**: Interactive web application framework
-- **SQLite Database**: Centralized data storage (`data/regland.sqlite`)
-- **ggplot2**: High-quality scientific visualizations
-- **DT**: Interactive data tables
-- **Bootstrap 5**: Modern responsive UI
+### Backend
+- **Django 4.2+** with Django REST Framework
+- **SQLite** database (uses existing regland.sqlite)
+- **Plotly** for interactive visualizations
+- **Pandas/NumPy** for data processing
+- **CORS headers** for cross-origin requests
 
-### Database Schema
+### Frontend  
+- **React 19** with TypeScript
+- **Material-UI (MUI) v5** for modern UI components
+- **Plotly.js** for interactive data visualizations
+- **Axios** for API communication
+- **React Router** for navigation
 
-The application uses a relational SQLite database with the following key tables:
+## Project Structure
 
-```sql
--- Core genomic features
-genes             (gene_id, symbol, species_id, chrom, start, end)
-enhancers         (enh_id, species_id, chrom, start, end, tissue, score, source)
-enhancer_class    (enh_id, class)  -- conserved/gained/lost/unlabeled
-
--- Chromatin architecture
-ctcf_sites        (site_id, species_id, chrom, start, end, score, cons_class)
-tad_domains       (tad_id, species_id, chrom, start, end, source)
-
--- GWAS data
-gwas_snps         (snp_id, rsid, chrom, pos, trait, pval, category)
-
--- Associations
-gene_to_enhancer  (gene_id, enh_id)
-snp_to_enhancer   (snp_id, enh_id)
+```
+Project Alpha/
+├── backend/
+│   ├── regland_backend/        # Django project configuration
+│   ├── regland_api/           # Main Django app with API endpoints
+│   ├── requirements.txt       # Python dependencies
+│   └── manage.py             # Django management script
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # Reusable React components
+│   │   ├── pages/           # Page-level components
+│   │   ├── services/        # API service layer
+│   │   └── types/          # TypeScript type definitions
+│   ├── package.json         # Node.js dependencies
+│   ├── public/             # Static assets
+│   └── build/              # Production build output
+├── start-backend.sh          # Backend startup script
+├── start-frontend.sh         # Frontend startup script
+└── README.md
 ```
 
-### Data Sources & Processing Pipeline
+## Quick Start
 
-#### 1. Gene Expression Data (`data/expression_tpm.tsv`)
-- **Source**: GTEx v8 median TPM values
-- **Processing**: `scripts/build_expression_from_gtex.sh`
-- **Format**: Symbol-tissue-TPM triplets
-- **Tissues**: Brain, Heart, Liver (aggregated from GTEx subtissues)
+For convenience, you can use the provided startup scripts:
 
-#### 2. GWAS Data (`data/gwas_hg38_with_category.tsv`)
-- **Source**: NHGRI-EBI GWAS Catalog
-- **Processing**: `scripts/fetch_gwas_by_trait.sh`, `scripts/prepare_gwas.R`
-- **Categories**: Alcohol, BMI, Inflammation
-- **Significance**: Genome-wide significant hits (p < 5×10⁻⁸)
+```bash
+# Start the backend server
+./start-backend.sh
 
-#### 3. Enhancer Data
-- **Sources**: Multiple ChIP-seq and ATAC-seq datasets
-- **Processing**: `scripts/build_enhancers.sh`
-- **Classification**: Cross-species conservation analysis
-- **Integration**: Linked to genes via proximity and 3D contacts
+# In another terminal, start the frontend
+./start-frontend.sh
+```
 
-#### 4. Chromatin Architecture
-- **CTCF Sites**: Conserved and species-specific binding sites
-- **TAD Domains**: Topologically associating domain boundaries
-- **Conservation Classes**: conserved, human_specific, other
+Or follow the detailed setup instructions below.
 
-## 🔧 Installation & Setup
+## Setup Instructions
 
 ### Prerequisites
-```bash
-# Install R dependencies
-R -e "install.packages(c('shiny', 'bslib', 'DT', 'DBI', 'RSQLite', 
-                        'ggplot2', 'dplyr', 'tidyr', 'thematic', 
-                        'shinyjs', 'scales', 'readr', 'stringr'))"
+- Python 3.8+
+- Node.js 16+
+- npm or yarn
 
-# Install optional performance packages
-R -e "install.packages(c('ragg'))  # Better PNG rendering"
-```
+### Backend Setup
 
-### Quick Start
-```bash
-# Navigate to your project directory
-cd path/to/your/regulatory-landscapes-project
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
 
-# Launch application
-R -e "shiny::runApp('app.R', host = '0.0.0.0', port = 3838)"
-```
+2. Create and activate a virtual environment:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-### Data Pipeline Setup
+3. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-#### 1. Expression Data
-```bash
-# Download and process GTEx data
-./scripts/build_expression_from_gtex.sh
-```
+4. Run Django migrations (if needed):
+   ```bash
+   python manage.py migrate
+   ```
 
-#### 2. GWAS Data
-```bash
-# Fetch GWAS associations by trait
-./scripts/fetch_gwas_by_trait.sh
+5. Start the Django development server:
+   ```bash
+   python manage.py runserver
+   ```
 
-# Or process full GWAS catalog
-Rscript scripts/prepare_gwas.R
-```
+The backend API will be available at `http://localhost:8000/`
 
-#### 3. Bootstrap Complete Dataset
-```bash
-# Populate database with all data sources
-Rscript scripts/bootstrap_data.R
-```
+### Frontend Setup
 
-## 📊 Application Features
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
 
-### 1. Explore Genes Tab
-**Primary Interface for Single-Gene Analysis**
+2. Install Node.js dependencies:
+   ```bash
+   npm install
+   ```
 
-**Controls:**
-- **Gene Search**: Enter gene symbol (e.g., BDNF, TTN, PCSK9)
-- **Species Selection**: Human (hg38), Mouse (mm39), Macaque, Chicken, Pig
-- **Tissue Filter**: Brain, Heart, Liver, Other
-- **Distance Window**: ±1-1000kb around TSS
-- **Enhancer Classes**: conserved, gained, lost, unlabeled
+3. Start the React development server:
+   ```bash
+   npm start
+   ```
 
-**Visualizations:**
-1. **Genome Tracks**: Linear view showing:
-   - Gene body annotation
-   - Enhancer elements (color-coded by conservation class)
-   - GWAS SNPs (sized by significance)
-   - TSS marker
+The frontend will be available at `http://localhost:3000/`
 
-2. **Conservation Heatmap**: Matrix showing enhancer density across genomic bins
-   - Rows: Conservation classes
-   - Columns: Genomic position bins
-   - Optional row normalization (0-100%)
+## API Endpoints
 
-3. **Expression Bar Plot**: Tissue-specific TPM values
-   - Optional log10 transformation
-   - Brain/Heart/Liver comparison
+The Django backend provides the following API endpoints:
 
-4. **GWAS Table**: Associated variants with:
-   - rsID, trait, p-value, category
-   - Filterable by trait categories
+- `GET /api/genes/search/` - Search for genes by symbol
+- `GET /api/genes/region/` - Get comprehensive data for a gene region
+- `GET /api/plots/genome-tracks/` - Generate genome tracks visualization
+- `GET /api/plots/conservation-matrix/` - Generate conservation matrix data
+- `GET /api/plots/expression/` - Get expression data and plots
+- `GET /api/species/` - Get list of available species
+- `GET /api/genes/presets/` - Get gene presets for different tissues
+- `GET /api/health/` - Health check endpoint
 
-**Presets:**
-- **Brain**: BDNF, SCN1A, GRIN2B, DRD2, APOE
-- **Heart**: TTN, MYH6, MYH7, PLN, KCNQ1  
-- **Liver**: ALB, APOB, CYP3A4, HNF4A, PCSK9
+## Database
 
-### 2. CTCF & 3D Tab
-**Chromatin Architecture Analysis**
+The application uses the existing `regland.sqlite` database from the original R Shiny app. The database contains:
 
-**Linking Modes:**
-- **TSS Window**: Simple distance-based (±250kb default)
-- **CTCF-bounded Domain**: Use TAD boundaries for gene-enhancer links
+- **genes**: Gene information across species
+- **enhancers_all**: Enhancer regions with tissue and conservation data
+- **enhancer_class**: Conservation classifications (conserved, gained, lost, unlabeled)
+- **gwas_snps**: GWAS SNP associations
+- **ctcf_sites**: CTCF binding sites with conservation information
+- **tad_domains**: TAD (Topologically Associating Domain) boundaries
 
-**Analysis Options:**
-- **CTCF Conservation Groups**: conserved, human_specific, other
-- **Enhancer Classes**: conserved, gained, lost, unlabeled
-- **Association Tests**: RNA expression, GWAS enrichment, CTCF strength
+## Development Journey
 
-**Visualizations:**
-1. **3D Domain View**: Genome tracks with TAD/CTCF annotations
-2. **Distance Distributions**: Enhancer distances to nearest CTCF sites
-3. **Enhancers per Domain**: Count by conservation class
-4. **Expression Associations**: Conserved enhancers vs RNA levels
-5. **GWAS Over-representation**: Statistical enrichment by region type
+### Migration from R Shiny
+This application was originally built as an R Shiny application but has been completely rewritten to provide:
 
-### 3. Additional Tabs
-- **Conservation Map**: Species-wide heatmap overview
-- **Expression**: Multi-gene, multi-tissue comparison
-- **GWAS/Heritability**: Trait overlap and enrichment analysis
-- **Downloads**: Export functionality for all results
+- **Better Performance**: Faster data processing with pandas/NumPy and optimized React components
+- **Modern UI/UX**: Clean, responsive interface built with Material-UI
+- **Scalability**: RESTful API architecture allows for future mobile apps and integrations
+- **Developer Experience**: TypeScript for better code maintainability and fewer runtime errors
+- **Deployment Flexibility**: Standard Django/React stack with multiple deployment options
 
-## 🔬 Scientific Implementation Details
+## Usage
 
-### Conservation Analysis Algorithm
+1. Start both backend and frontend servers (see Quick Start or Setup Instructions above)
+2. Open `http://localhost:3000` in your browser
+3. Navigate through the application using the sidebar menu:
+   - **Home**: Overview and project information
+   - **Explore Genes**: Interactive gene analysis and visualization
+   - **Conservation Map**: Cross-species conservation patterns
+   - **CTCF & 3D**: Chromatin structure analysis
+   - **Expression**: Gene expression comparisons
+   - **GWAS**: Trait association analysis
+   - **Downloads**: Export data and results
 
-1. **Enhancer Discovery**: Peak calling on tissue-specific chromatin data
-2. **Cross-species Alignment**: Lift-over to common coordinate system
-3. **Conservation Classification**:
-   - **Conserved**: Present in ≥2 species
-   - **Gained**: Species-specific acquisition
-   - **Lost**: Ancestral element lost in lineage
-   - **Unlabeled**: Insufficient evidence
+## Key Features
 
-### Gene-Enhancer Linking
+- **Gene Search**: Enter gene symbols (e.g., "BDNF", "TP53") to explore regulatory landscapes
+- **Species Comparison**: Analyze conservation across multiple mammalian species
+- **Tissue-Specific Analysis**: Compare regulatory patterns across different tissues
+- **Interactive Visualizations**: Powered by Plotly for dynamic data exploration
+- **Real-Time Updates**: Responsive interface with live data filtering and parameter adjustment
 
-**Method 1: Proximity-based**
-```r
-# Link enhancers within distance window of TSS
-half <- kb_to_bp(input$tss_kb)
-enhancers_in_window <- enhancers[
-  abs(enhancers$midpoint - gene$tss) <= half
-]
-```
+## Scientific Background & Citation
 
-**Method 2: 3D Chromatin-based**
-```r
-# Use TAD boundaries to define regulatory domains
-tad <- get_tad_containing_tss(gene$tss)
-enhancers_in_domain <- enhancers[
-  enhancers$start >= tad$start & enhancers$end <= tad$end
-]
-```
+This platform is built upon the research and data from:
 
-### Expression Integration
+**Berthelot et al.**, "Complexity and conservation of regulatory landscapes underlie evolutionary resilience of mammalian gene expression", *Nature Ecology & Evolution*, 2018. [DOI: 10.1038/s41559-017-0377-2](https://doi.org/10.1038/s41559-017-0377-2)
 
-**GTEx Processing Pipeline**:
-1. Download median TPM values across all tissues
-2. Map tissue names to standardized categories:
-   - Brain: All brain regions + CNS tissues
-   - Heart: Atrial appendage + left ventricle  
-   - Liver: Liver tissue only
-3. Calculate mean TPM for multi-tissue categories
-
-### GWAS Association Testing
-
-**SNP-Enhancer Overlap**:
-```sql
-SELECT COUNT(*) as gwas_hits
-FROM gwas_snps s
-JOIN snp_to_enhancer se ON s.snp_id = se.snp_id
-JOIN enhancers e ON se.enh_id = e.enh_id
-WHERE e.class = 'conserved'
-```
-
-**Enrichment Calculation**:
-- Fisher's exact test for over-representation
-- Background: All enhancers in genomic window
-- Foreground: GWAS-associated enhancers by trait
-
-## 📈 Performance Optimizations
-
-### Database Indexing
-```sql
--- Key performance indexes
-CREATE INDEX idx_genes_species_chrom_start ON genes(species_id,chrom,start);
-CREATE INDEX idx_enh_species_chrom_bounds ON enhancers(species_id,chrom,start,end);
-CREATE INDEX idx_snp_chrom_pos ON gwas_snps(chrom,pos);
-CREATE INDEX idx_ctcf_species_chrom_bounds ON ctcf_sites(species_id,chrom,start,end);
-```
-
-### Reactive Programming
-- **Debounced Input**: 400ms delay on gene search
-- **Event-driven Updates**: Automatic refresh on parameter changes
-- **Conditional Queries**: Only execute when required data exists
-
-### Memory Management
-- **Connection Pooling**: Single persistent SQLite connection
-- **Lazy Loading**: Data fetched only when visualizations are rendered
-- **Efficient Filtering**: SQL-based subsetting before R processing
-
-## 📚 Data Sources & Citations
-
-### Primary Data Sources
-- **Gene Annotations**: GENCODE/Ensembl
-- **Expression**: GTEx Consortium v8
-- **GWAS**: NHGRI-EBI GWAS Catalog
-- **Enhancers**: ENCODE, Roadmap Epigenomics
-- **CTCF/TADs**: 3D Genome Browser, Hi-C datasets
-
-### Key References
-- Berthelot et al., Nature Ecology & Evolution (2018) - Conservation methodology
-- GTEx Consortium, Science (2020) - Expression atlas
-- Buniello et al., Nucleic Acids Research (2019) - GWAS Catalog
-
-**Technical Implementation**: Research-grade bioinformatics pipeline with production-ready web interface suitable for publication and collaborative research.
+The application provides an interactive interface to explore the comprehensive dataset of regulatory element conservation across mammalian species, enabling researchers to investigate evolutionary patterns in gene regulation.

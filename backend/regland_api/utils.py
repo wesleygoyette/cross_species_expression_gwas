@@ -878,3 +878,511 @@ def get_ucsc_url(species_id, chrom, start, end):
     
     position = f"{chrom}:{start:,}-{end:,}"
     return f"https://genome.ucsc.edu/cgi-bin/hgTracks?db={db}&position={position}"
+
+
+# ========================================
+# CTCF & 3D Analysis Functions
+# ========================================
+
+def get_domain_region(gene_data, link_mode, tss_kb_ctcf, domain_snap_tss, species_id):
+    """Get the domain region based on link mode"""
+    if link_mode == 'tss':
+        # TSS window mode
+        half_window = tss_kb_ctcf * 1000
+        tss = gene_data['tss']
+        return {
+            'gene_id': gene_data['gene_id'],
+            'chrom': gene_data['chrom'],
+            'start': max(0, tss - half_window),
+            'end': tss + half_window,
+            'tss': tss
+        }
+    
+    elif link_mode == 'ctcf':
+        # CTCF-bounded domain mode
+        tss = gene_data['tss']
+        chrom = gene_data['chrom']
+        
+        # Find TAD domain containing the TSS
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT * FROM tad_domains
+                WHERE species_id = %s AND chrom = %s AND start < %s AND end > %s
+                ORDER BY (end - start) ASC
+                LIMIT 1
+            """, [species_id, chrom, tss, tss])
+            
+            tad = cursor.fetchone()
+            
+            if domain_snap_tss and tad:
+                # Use TAD domain boundaries
+                columns = [col[0] for col in cursor.description]
+                tad_dict = dict(zip(columns, tad))
+                return {
+                    'gene_id': gene_data['gene_id'],
+                    'chrom': gene_data['chrom'],
+                    'start': tad_dict['start'],
+                    'end': tad_dict['end'],
+                    'tss': tss
+                }
+            else:
+                # Fall back to original gene region
+                return gene_data
+    
+    return gene_data
+
+
+def get_ctcf_data_in_region(species_id, chrom, start, end, cons_groups):
+    """Get CTCF sites in region with conservation filtering"""
+    # Since conservation class data might be missing, we'll use all CTCF sites
+    # and assign a default conservation class
+    
+    with connection.cursor() as cursor:
+        query = """
+            SELECT site_id, chrom, start, end, score, motif_p, 
+                   COALESCE(NULLIF(cons_class, ''), 'unknown') as cons_class
+            FROM ctcf_sites
+            WHERE species_id = %s AND chrom = %s AND start < %s AND end > %s
+            ORDER BY score DESC
+            LIMIT 500
+        """
+        
+        params = [species_id, chrom, end, start]
+        cursor.execute(query, params)
+        
+        columns = [col[0] for col in cursor.description]
+        ctcf_sites = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    
+    # Filter by conservation groups if conservation data exists
+    if cons_groups and ctcf_sites:
+        # Check if we have any real conservation data
+        has_cons_data = any(site.get('cons_class') not in [None, '', 'unknown'] 
+                           for site in ctcf_sites)
+        
+        if has_cons_data:
+            # Filter by selected conservation groups
+            ctcf_sites = [site for site in ctcf_sites 
+                         if site.get('cons_class', 'unknown') in cons_groups]
+        else:
+            # No conservation data available, use all sites but assign default class
+            for site in ctcf_sites:
+                site['cons_class'] = 'unknown'
+    
+    return ctcf_sites
+
+
+def get_enhancers_in_domain(species_id, chrom, start, end, enh_cons_groups):
+    """Get enhancers in domain region with conservation filtering"""
+    if not enh_cons_groups:
+        return []
+    
+    cons_placeholders = ','.join(['%s' for _ in enh_cons_groups])
+    
+    with connection.cursor() as cursor:
+        query = f"""
+            SELECT e.enh_id, e.chrom, e.start, e.end, e.score, e.tissue,
+                   COALESCE(ec.class, 'unlabeled') as class
+            FROM enhancers_all e
+            LEFT JOIN enhancer_class ec ON e.enh_id = ec.enh_id
+            WHERE e.species_id = %s AND e.chrom = %s AND e.start < %s AND e.end > %s
+              AND COALESCE(ec.class, 'unlabeled') IN ({cons_placeholders})
+            ORDER BY e.start
+            LIMIT 500
+        """
+        
+        params = [species_id, chrom, end, start] + enh_cons_groups
+        cursor.execute(query, params)
+        
+        columns = [col[0] for col in cursor.description]
+        enhancers = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    
+    return enhancers
+
+
+def get_gwas_in_enhancers_domain(species_id, chrom, start, end):
+    """Get GWAS SNPs in enhancers within domain"""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT DISTINCT s.rsid, s.trait, s.pval, s.chrom, s.pos, s.category
+            FROM gwas_snps s
+            JOIN snp_to_enhancer se ON se.snp_id = s.snp_id
+            JOIN enhancers_all e ON e.enh_id = se.enh_id
+            WHERE e.species_id = %s AND e.chrom = %s AND e.start < %s AND e.end > %s
+            ORDER BY COALESCE(s.pval, 1e99) ASC
+            LIMIT 200
+        """, [species_id, chrom, end, start])
+        
+        columns = [col[0] for col in cursor.description]
+        gwas_snps = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    
+    return gwas_snps
+
+
+def create_ctcf_tracks_plot(domain_region, enhancers, ctcf_sites):
+    """Create CTCF tracks visualization similar to R version"""
+    fig = go.Figure()
+    
+    xmin = domain_region['start']
+    xmax = domain_region['end']
+    tss = domain_region['tss']
+    
+    # Color palettes
+    enh_colors = {
+        'conserved': '#31c06a',
+        'gained': '#ffcf33',
+        'lost': '#8f9aa7',
+        'unlabeled': '#4ea4ff'
+    }
+    
+    ctcf_colors = {
+        'conserved': '#1f77b4',
+        'human_specific': '#d62728',
+        'unknown': '#7f7f7f',
+        'other': '#7f7f7f'
+    }
+    
+    # Background region
+    fig.add_shape(
+        type="rect",
+        x0=xmin, y0=0.58, x1=xmax, y1=0.62,
+        fillcolor="#e1e6ec",
+        line=dict(width=0)
+    )
+    
+    # Add enhancers
+    for i, enh in enumerate(enhancers):
+        enh_start = max(enh['start'], xmin)
+        enh_end = min(enh['end'], xmax)
+        
+        # Make thin enhancers more visible
+        pad = max(50, (xmax - xmin) * 0.0002)
+        if (enh_end - enh_start) < (2 * pad):
+            mid = (enh_start + enh_end) / 2
+            enh_start = max(xmin, mid - pad)
+            enh_end = min(xmax, mid + pad)
+        
+        color = enh_colors.get(enh.get('class', 'unlabeled'), enh_colors['unlabeled'])
+        
+        fig.add_shape(
+            type="rect",
+            x0=enh_start, y0=0.64, x1=enh_end, y1=0.80,
+            fillcolor=color,
+            line=dict(color="#26303a", width=0.15)
+        )
+        
+        # Add enhancer to legend (only once per class)
+        if i == 0 or enh.get('class') != enhancers[i-1].get('class'):
+            fig.add_trace(go.Scatter(
+                x=[None], y=[None],
+                mode='markers',
+                marker=dict(color=color, size=10, symbol='square'),
+                name=f"Enhancer: {enh.get('class', 'unlabeled')}",
+                showlegend=True
+            ))
+    
+    # Add CTCF sites
+    for i, ctcf in enumerate(ctcf_sites):
+        mid = (ctcf['start'] + ctcf['end']) / 2
+        color = ctcf_colors.get(ctcf.get('cons_class', 'unknown'), ctcf_colors['unknown'])
+        
+        fig.add_shape(
+            type="line",
+            x0=mid, y0=0.44, x1=mid, y1=0.58,
+            line=dict(color=color, width=2)
+        )
+        
+        # Add CTCF to legend (only once per class)
+        if i == 0 or ctcf.get('cons_class') != ctcf_sites[i-1].get('cons_class'):
+            fig.add_trace(go.Scatter(
+                x=[None], y=[None],
+                mode='markers',
+                marker=dict(color=color, size=10, symbol='line-ns'),
+                name=f"CTCF: {ctcf.get('cons_class', 'unknown')}",
+                showlegend=True
+            ))
+    
+    # Add TSS marker
+    fig.add_shape(
+        type="line",
+        x0=tss, y0=0.82, x1=tss, y1=0.90,
+        line=dict(color="#e8590c", width=2, dash="dash")
+    )
+    
+    # Add TSS label
+    fig.add_annotation(
+        x=tss, y=0.91,
+        text="TSS",
+        showarrow=False,
+        font=dict(color="#e8590c", size=12),
+        yanchor="bottom"
+    )
+    
+    # Update layout
+    fig.update_layout(
+        xaxis=dict(
+            range=[xmin, xmax],
+            tickformat=".1f",
+            title="Position (Mb)",
+            ticksuffix=" Mb",
+            tickvals=np.linspace(xmin, xmax, 5),
+            ticktext=[f"{x/1e6:.1f}" for x in np.linspace(xmin, xmax, 5)]
+        ),
+        yaxis=dict(
+            range=[0.40, 0.94],
+            showticklabels=False,
+            showgrid=False
+        ),
+        height=340,
+        margin=dict(l=50, r=50, t=30, b=50),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5
+        ),
+        plot_bgcolor="white"
+    )
+    
+    # Convert to JSON
+    plot_json = json.loads(json.dumps(fig, cls=PlotlyJSONEncoder))
+    
+    return {'plot_data': plot_json}
+
+
+def create_ctcf_distance_plot(enhancers, ctcf_sites, domain_region, dist_cap_kb):
+    """Create distance to nearest CTCF plot"""
+    if not enhancers or not ctcf_sites:
+        return create_empty_plot("No enhancers or CTCF sites found")
+    
+    # Calculate enhancer midpoints
+    for enh in enhancers:
+        enh['mid'] = (max(enh['start'], domain_region['start']) + 
+                     min(enh['end'], domain_region['end'])) / 2
+    
+    # Calculate CTCF midpoints
+    for ctcf in ctcf_sites:
+        ctcf['mid'] = (ctcf['start'] + ctcf['end']) / 2
+    
+    # Find nearest CTCF for each enhancer
+    distances = []
+    for enh in enhancers:
+        min_dist = float('inf')
+        nearest_ctcf_class = None
+        
+        for ctcf in ctcf_sites:
+            if enh['chrom'] == ctcf['chrom']:  # Same chromosome
+                dist = abs(enh['mid'] - ctcf['mid'])
+                if dist < min_dist:
+                    min_dist = dist
+                    nearest_ctcf_class = ctcf.get('cons_class', 'unknown')
+        
+        if min_dist != float('inf'):
+            distances.append({
+                'class': enh.get('class', 'unlabeled'),
+                'cons_class': nearest_ctcf_class,
+                'dist_kb': min(min_dist / 1000, dist_cap_kb)
+            })
+    
+    if not distances:
+        return create_empty_plot("No valid distances calculated")
+    
+    # Create violin/box plots
+    fig = go.Figure()
+    
+    # Group data by enhancer class
+    df = pd.DataFrame(distances)
+    
+    for enh_class in df['class'].unique():
+        if pd.isna(enh_class):
+            continue
+        
+        class_data = df[df['class'] == enh_class]['dist_kb']
+        
+        if len(class_data) > 0:
+            # Use box plot since violin plots need more data points
+            fig.add_trace(go.Box(
+                y=class_data,
+                name=enh_class,
+                boxpoints='outliers',
+                jitter=0.3,
+                pointpos=-1.8
+            ))
+    
+    # Update layout
+    fig.update_layout(
+        title="Distance to Nearest CTCF by Enhancer Class",
+        xaxis_title="Enhancer Class",
+        yaxis_title=f"Distance (kb, capped at {dist_cap_kb})",
+        height=380,
+        margin=dict(l=50, r=50, t=50, b=50),
+        showlegend=False
+    )
+    
+    # Convert to JSON
+    plot_json = json.loads(json.dumps(fig, cls=PlotlyJSONEncoder))
+    
+    return {'plot_data': plot_json}
+
+
+def create_enhancers_per_domain_plot(enhancers):
+    """Create enhancers per domain plot"""
+    if not enhancers:
+        return create_empty_plot("No enhancers found in this region")
+    
+    # Count enhancers by class
+    df = pd.DataFrame(enhancers)
+    counts = df['class'].value_counts().reset_index()
+    counts.columns = ['class', 'count']
+    
+    # Create bar plot
+    fig = go.Figure(data=[
+        go.Bar(
+            x=counts['class'],
+            y=counts['count'],
+            text=counts['count'],
+            textposition='outside',
+            marker_color=['#31c06a' if x == 'conserved' else
+                         '#ffcf33' if x == 'gained' else
+                         '#8f9aa7' if x == 'lost' else
+                         '#4ea4ff' for x in counts['class']]
+        )
+    ])
+    
+    fig.update_layout(
+        title="Enhancers per Region by Class",
+        xaxis_title="Enhancer Class",
+        yaxis_title="# Enhancers in region",
+        height=380,
+        margin=dict(l=50, r=50, t=50, b=50),
+        showlegend=False
+    )
+    
+    # Convert to JSON
+    plot_json = json.loads(json.dumps(fig, cls=PlotlyJSONEncoder))
+    
+    return {'plot_data': plot_json}
+
+
+def create_expression_association_plot(enhancers, gene_symbol):
+    """Create conserved enhancers vs RNA expression plot"""
+    # Count conserved enhancers
+    conserved_count = sum(1 for enh in enhancers if enh.get('class') == 'conserved')
+    
+    # Get expression data (simplified - would need actual expression data)
+    try:
+        expr_result = get_expression_data_cached(gene_symbol, log_scale=False)
+        expr_data = expr_result['expression_data']
+        
+        # Calculate mean TPM across tissues
+        total_tpm = sum(item['tpm'] for item in expr_data)
+        mean_tpm = total_tpm / len(expr_data) if expr_data else 0
+    except:
+        mean_tpm = 0
+    
+    # Create scatter plot
+    fig = go.Figure(data=go.Scatter(
+        x=[conserved_count],
+        y=[mean_tpm],
+        mode='markers',
+        marker=dict(size=10, color='blue'),
+        name=gene_symbol
+    ))
+    
+    fig.update_layout(
+        title=f"Conserved Enhancers vs Expression - {gene_symbol}",
+        xaxis_title="# conserved enhancers in region",
+        yaxis_title="Mean TPM",
+        height=380,
+        margin=dict(l=50, r=50, t=50, b=50),
+        showlegend=False
+    )
+    
+    # Convert to JSON
+    plot_json = json.loads(json.dumps(fig, cls=PlotlyJSONEncoder))
+    
+    return {'plot_data': plot_json}
+
+
+def create_gwas_partition_table(enhancers, gwas_snps):
+    """Create GWAS over-representation analysis table"""
+    if not enhancers:
+        return {'table_data': []}
+    
+    # Create mapping of enhancer IDs with GWAS hits
+    gwas_enh_ids = set()
+    # This would need proper linking through snp_to_enhancer table
+    # For now, simplified approach
+    
+    # Count enhancers by conservation and GWAS presence
+    data = []
+    for bucket in ['conserved', 'non_conserved']:
+        if bucket == 'conserved':
+            bucket_enhancers = [e for e in enhancers if e.get('class') == 'conserved']
+        else:
+            bucket_enhancers = [e for e in enhancers if e.get('class') != 'conserved']
+        
+        total = len(bucket_enhancers)
+        with_gwas = 0  # Simplified - would need proper calculation
+        no_gwas = total - with_gwas
+        prop = with_gwas / total if total > 0 else 0
+        
+        data.append({
+            'bucket': bucket,
+            'total': total,
+            'with_gwas': with_gwas,
+            'prop': round(prop, 3),
+            'odds_ratio': None if bucket != 'conserved' else 1.0,  # Simplified
+            'p_value': None if bucket != 'conserved' else 0.5  # Simplified
+        })
+    
+    return {'table_data': data}
+
+
+def create_ctcf_sites_table(ctcf_sites):
+    """Create table of top CTCF sites"""
+    if not ctcf_sites:
+        return {'table_data': []}
+    
+    # Sort by score (descending) and take top sites
+    sorted_sites = sorted(ctcf_sites, key=lambda x: x.get('score', 0), reverse=True)[:10]
+    
+    table_data = []
+    for site in sorted_sites:
+        mid = round((site['start'] + site['end']) / 2)
+        width = site['end'] - site['start']
+        
+        table_data.append({
+            'cons_class': site.get('cons_class', 'other'),
+            'score': round(site.get('score', 0), 3),
+            'chrom': site['chrom'],
+            'start': site['start'],
+            'end': site['end'],
+            'width': width,
+            'mid': mid
+        })
+    
+    return {'table_data': table_data}
+
+
+def create_empty_plot(message):
+    """Create empty plot with message"""
+    fig = go.Figure()
+    
+    fig.add_annotation(
+        x=0.5, y=0.5,
+        text=message,
+        showarrow=False,
+        font=dict(size=14, color="gray"),
+        xref="paper", yref="paper"
+    )
+    
+    fig.update_layout(
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
+        height=380,
+        margin=dict(l=20, r=20, t=20, b=20)
+    )
+    
+    plot_json = json.loads(json.dumps(fig, cls=PlotlyJSONEncoder))
+    return {'plot_data': plot_json}

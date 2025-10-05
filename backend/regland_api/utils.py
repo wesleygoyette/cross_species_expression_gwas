@@ -1020,136 +1020,158 @@ def get_gwas_in_enhancers_domain(species_id, chrom, start, end):
 
 def create_ctcf_tracks_plot(domain_region, enhancers, ctcf_sites):
     """Create CTCF tracks visualization similar to R version"""
-    fig = go.Figure()
-    
-    xmin = domain_region['start']
-    xmax = domain_region['end']
-    tss = domain_region['tss']
-    
-    # Color palettes
-    enh_colors = {
-        'conserved': '#31c06a',
-        'gained': '#ffcf33',
-        'lost': '#8f9aa7',
-        'unlabeled': '#4ea4ff'
-    }
-    
-    ctcf_colors = {
-        'conserved': '#1f77b4',
-        'human_specific': '#d62728',
-        'unknown': '#7f7f7f',
-        'other': '#7f7f7f'
-    }
-    
-    # Background region
-    fig.add_shape(
-        type="rect",
-        x0=xmin, y0=0.58, x1=xmax, y1=0.62,
-        fillcolor="#e1e6ec",
-        line=dict(width=0)
-    )
-    
-    # Add enhancers
-    for i, enh in enumerate(enhancers):
-        enh_start = max(enh['start'], xmin)
-        enh_end = min(enh['end'], xmax)
+    try:
+        fig = go.Figure()
         
-        # Make thin enhancers more visible
-        pad = max(50, (xmax - xmin) * 0.0002)
-        if (enh_end - enh_start) < (2 * pad):
-            mid = (enh_start + enh_end) / 2
-            enh_start = max(xmin, mid - pad)
-            enh_end = min(xmax, mid + pad)
+        xmin = domain_region['start']
+        xmax = domain_region['end']
+        tss = domain_region['tss']
         
-        color = enh_colors.get(enh.get('class', 'unlabeled'), enh_colors['unlabeled'])
+        # Color palettes
+        enh_colors = {
+            'conserved': '#31c06a',
+            'gained': '#ffcf33',
+            'lost': '#8f9aa7',
+            'unlabeled': '#4ea4ff'
+        }
         
+        ctcf_colors = {
+            'conserved': '#1f77b4',
+            'human_specific': '#d62728',
+            'unknown': '#7f7f7f',
+            'other': '#7f7f7f'
+        }
+        
+        # Background region
         fig.add_shape(
             type="rect",
-            x0=enh_start, y0=0.64, x1=enh_end, y1=0.80,
-            fillcolor=color,
-            line=dict(color="#26303a", width=0.15)
+            x0=xmin, y0=0.58, x1=xmax, y1=0.62,
+            fillcolor="#e1e6ec",
+            line={"width": 0}
         )
         
-        # Add enhancer to legend (only once per class)
-        if i == 0 or enh.get('class') != enhancers[i-1].get('class'):
-            fig.add_trace(go.Scatter(
-                x=[None], y=[None],
-                mode='markers',
-                marker=dict(color=color, size=10, symbol='square'),
-                name=f"Enhancer: {enh.get('class', 'unlabeled')}",
-                showlegend=True
-            ))
-    
-    # Add CTCF sites
-    for i, ctcf in enumerate(ctcf_sites):
-        mid = (ctcf['start'] + ctcf['end']) / 2
-        color = ctcf_colors.get(ctcf.get('cons_class', 'unknown'), ctcf_colors['unknown'])
+        # Add enhancers
+        for i, enh in enumerate(enhancers):
+            enh_start = max(enh['start'], xmin)
+            enh_end = min(enh['end'], xmax)
+            
+            # Make thin enhancers more visible
+            pad = max(50, (xmax - xmin) * 0.0002)
+            if (enh_end - enh_start) < (2 * pad):
+                mid = (enh_start + enh_end) / 2
+                enh_start = max(xmin, mid - pad)
+                enh_end = min(xmax, mid + pad)
+            
+            color = enh_colors.get(enh.get('class', 'unlabeled'), enh_colors['unlabeled'])
+            
+            fig.add_shape(
+                type="rect",
+                x0=enh_start, y0=0.64, x1=enh_end, y1=0.80,
+                fillcolor=color,
+                line={"color": "#26303a", "width": 0.15}
+            )
+            
+            # Add enhancer to legend (only once per class)
+            if i == 0 or enh.get('class') != enhancers[i-1].get('class'):
+                fig.add_trace(go.Scatter(
+                    x=[None], y=[None],
+                    mode='markers',
+                    marker=dict(color=color, size=10, symbol='square'),
+                    name=f"Enhancer: {enh.get('class', 'unlabeled')}",
+                    showlegend=True
+                ))
         
+        # Add CTCF sites
+        for i, ctcf in enumerate(ctcf_sites):
+            mid = (ctcf['start'] + ctcf['end']) / 2
+            color = ctcf_colors.get(ctcf.get('cons_class', 'unknown'), ctcf_colors['unknown'])
+            
+            fig.add_shape(
+                type="line",
+                x0=mid, y0=0.44, x1=mid, y1=0.58,
+                line={"color": color, "width": 2}
+            )
+            
+            # Add CTCF to legend (only once per class)
+            if i == 0 or ctcf.get('cons_class') != ctcf_sites[i-1].get('cons_class'):
+                fig.add_trace(go.Scatter(
+                    x=[None], y=[None],
+                    mode='markers',
+                    marker=dict(color=color, size=10, symbol='line-ns'),
+                    name=f"CTCF: {ctcf.get('cons_class', 'unknown')}",
+                    showlegend=True
+                ))
+        
+        # Add TSS marker
         fig.add_shape(
             type="line",
-            x0=mid, y0=0.44, x1=mid, y1=0.58,
-            line=dict(color=color, width=2)
+            x0=tss, y0=0.82, x1=tss, y1=0.90,
+            line={"color": "#e8590c", "width": 2, "dash": "dash"}
         )
         
-        # Add CTCF to legend (only once per class)
-        if i == 0 or ctcf.get('cons_class') != ctcf_sites[i-1].get('cons_class'):
-            fig.add_trace(go.Scatter(
-                x=[None], y=[None],
-                mode='markers',
-                marker=dict(color=color, size=10, symbol='line-ns'),
-                name=f"CTCF: {ctcf.get('cons_class', 'unknown')}",
-                showlegend=True
-            ))
-    
-    # Add TSS marker
-    fig.add_shape(
-        type="line",
-        x0=tss, y0=0.82, x1=tss, y1=0.90,
-        line=dict(color="#e8590c", width=2, dash="dash")
-    )
-    
-    # Add TSS label
-    fig.add_annotation(
-        x=tss, y=0.91,
-        text="TSS",
-        showarrow=False,
-        font=dict(color="#e8590c", size=12),
-        yanchor="bottom"
-    )
-    
-    # Update layout
-    fig.update_layout(
-        xaxis=dict(
-            range=[xmin, xmax],
-            tickformat=".1f",
-            title="Position (Mb)",
-            ticksuffix=" Mb",
-            tickvals=np.linspace(xmin, xmax, 5),
-            ticktext=[f"{x/1e6:.1f}" for x in np.linspace(xmin, xmax, 5)]
-        ),
-        yaxis=dict(
-            range=[0.40, 0.94],
-            showticklabels=False,
-            showgrid=False
-        ),
-        height=340,
-        margin=dict(l=50, r=50, t=30, b=50),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.2,
-            xanchor="center",
-            x=0.5
-        ),
-        plot_bgcolor="white"
-    )
-    
-    # Convert to JSON
-    plot_json = json.loads(json.dumps(fig, cls=PlotlyJSONEncoder))
-    
-    return {'plot_data': plot_json}
-
-
+        # Add TSS label
+        fig.add_annotation(
+            x=tss, y=0.91,
+            text="TSS",
+            showarrow=False,
+            font=dict(color="#e8590c", size=12),
+            yanchor="bottom"
+        )
+        
+        # Update layout
+        fig.update_layout(
+            xaxis=dict(
+                range=[xmin, xmax],
+                tickformat=".1f",
+                title="Position (Mb)",
+                ticksuffix=" Mb",
+                tickvals=np.linspace(xmin, xmax, 5),
+                ticktext=[f"{x/1e6:.1f}" for x in np.linspace(xmin, xmax, 5)]
+            ),
+            yaxis=dict(
+                range=[0.40, 0.94],
+                showticklabels=False,
+                showgrid=False
+            ),
+            height=340,
+            margin=dict(l=50, r=50, t=30, b=50),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.2,
+                xanchor="center",
+                x=0.5
+            ),
+            plot_bgcolor="white"
+        )
+        
+        # Convert to JSON
+        plot_json = json.loads(json.dumps(fig, cls=PlotlyJSONEncoder))
+        
+        return {'plot_data': plot_json}
+        
+    except Exception as e:
+        # Log the error and return a simple fallback plot
+        print(f"Error creating CTCF tracks plot: {str(e)}")
+        
+        # Return a simple fallback plot
+        fig = go.Figure()
+        fig.add_annotation(
+            x=0.5, y=0.5,
+            text=f"Error generating plot: {str(e)[:100]}...",
+            showarrow=False,
+            xref="paper", yref="paper",
+            font=dict(size=14)
+        )
+        fig.update_layout(
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            height=300,
+            margin=dict(l=50, r=50, t=50, b=50)
+        )
+        
+        plot_json = json.loads(json.dumps(fig, cls=PlotlyJSONEncoder))
+        return {'plot_data': plot_json}
 def create_ctcf_distance_plot(enhancers, ctcf_sites, domain_region, dist_cap_kb):
     """Create distance to nearest CTCF plot"""
     if not enhancers or not ctcf_sites:

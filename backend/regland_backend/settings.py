@@ -199,3 +199,18 @@ CACHES = {
         }
     }
 }
+
+# Database connection timeout settings
+if os.getenv('USE_MYSQL', 'False').lower() == 'true':
+    DATABASES['default']['OPTIONS'].update({
+        'connect_timeout': 60,
+        'read_timeout': 60,
+        'write_timeout': 60,
+    })
+
+# Performance optimization settings
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# Enable compression for responses
+USE_GZIP = True

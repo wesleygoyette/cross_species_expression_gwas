@@ -126,9 +126,19 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Stop existing containers
+    - name: Pre-deployment cleanup
       run: |
-        docker compose down || true
+        # Stop and remove existing containers
+        docker compose down --remove-orphans || true
+        
+        # Clean up dangling and unused images
+        docker image prune -f
+        
+        # Clean up unused containers
+        docker container prune -f
+        
+        # Clean up build cache to prevent accumulation
+        docker builder prune -f --all
     
     - name: Pull latest images
       run: |
@@ -158,6 +168,21 @@ jobs:
       run: |
         timeout 300 bash -c 'until docker compose -f docker-compose.prod.yml ps | grep -q "healthy"; do sleep 5; done'
     
-    - name: Cleanup old images
+    - name: Post-deployment cleanup
       run: |
+        # Remove all dangling images (untagged)
         docker image prune -f
+        
+        # Remove old/unused images but keep currently running ones
+        docker images | grep '${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}' | grep -v latest | awk '{print $3}' | xargs -r docker rmi || true
+        docker images | grep '${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}' | grep -v latest | awk '{print $3}' | xargs -r docker rmi || true
+        
+        # Clean up any remaining unused Docker resources
+        docker system prune -f --volumes
+        
+        # Clean up workspace artifacts but preserve deployment files
+        find . -name "*.log" -not -path "./backend/server.log" -delete || true
+        find . -name "__pycache__" -type d -exec rm -rf {} + || true
+        find . -name "*.pyc" -delete || true
+        find . -name ".pytest_cache" -type d -exec rm -rf {} + || true
+        find . -name "node_modules/.cache" -type d -exec rm -rf {} + || true

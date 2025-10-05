@@ -26,6 +26,9 @@ MANIFEST
 local_settings.py
 # Note: regland.sqlite is tracked with Git LFS (see .gitattributes)
 db.sqlite3-journal
+# SQLite temporary files
+*.sqlite-shm
+*.sqlite-wal
 media/
 staticfiles/
 static/

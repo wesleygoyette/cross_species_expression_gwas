@@ -314,8 +314,8 @@ def ctcf_analysis(request):
         )
         
         data = request.data
-        gene_symbol = data.get('gene_symbol')
-        species_id = int(data.get('species_id', 9606))
+        gene_symbol = data.get('gene')
+        species_id = data.get('species', 'human_hg38')
         link_mode = data.get('link_mode', 'gene')
         tss_kb_ctcf = int(data.get('tss_kb_ctcf', 250))
         domain_snap_tss = data.get('domain_snap_tss', True)

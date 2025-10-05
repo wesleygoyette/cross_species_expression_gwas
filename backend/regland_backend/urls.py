@@ -26,12 +26,20 @@ def api_root(request):
             'genes': '/api/genes/',
             'plots': '/api/plots/',
             'species': '/api/species/',
-            'health': '/api/health/'
+            'health': '/health/'
         }
+    })
+
+def health_check(request):
+    """Health check endpoint for monitoring"""
+    return JsonResponse({
+        'status': 'healthy',
+        'service': 'regland_backend'
     })
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('regland_api.urls')),
+    path('health/', health_check, name='health_check'),
     path('', api_root, name='api_root'),
 ]

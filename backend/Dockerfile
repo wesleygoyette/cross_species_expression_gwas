@@ -13,6 +13,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     curl \
+    default-mysql-client \
+    pkg-config \
+    default-libmysqlclient-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -32,8 +35,6 @@ RUN python manage.py collectstatic --noinput --settings=regland_backend.settings
 # Create startup script
 RUN echo '#!/bin/bash\n\
 set -e\n\
-echo "Running database migrations..."\n\
-python manage.py migrate --noinput\n\
 echo "Starting gunicorn server..."\n\
 exec gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 regland_backend.wsgi:application' > /app/start.sh && \
     chmod +x /app/start.sh

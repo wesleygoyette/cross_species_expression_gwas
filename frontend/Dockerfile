@@ -4,17 +4,20 @@ FROM node:20-alpine AS build
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Set memory optimization environment variables
+ENV NODE_OPTIONS="--max_old_space_size=4096"
+ENV GENERATE_SOURCEMAP=false
+ENV CI=false
 
-# Install dependencies (including devDependencies for build)
-RUN npm ci
+# Install dependencies first (better caching)
+COPY package*.json ./
+RUN npm ci --only=production=false --silent
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with memory optimizations
+RUN npm run build:docker
 
 # Production stage
 FROM nginx:alpine

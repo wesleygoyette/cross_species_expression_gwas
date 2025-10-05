@@ -32,9 +32,23 @@ def api_root(request):
 
 def health_check(request):
     """Health check endpoint for monitoring"""
+    try:
+        from django.db import connection
+        from django.conf import settings
+        
+        # Test database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            db_status = "healthy"
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
+    
     return JsonResponse({
-        'status': 'healthy',
-        'service': 'regland_backend'
+        'status': 'healthy' if db_status == "healthy" else 'unhealthy',
+        'service': 'regland_backend',
+        'database': db_status,
+        'debug': settings.DEBUG,
+        'allowed_hosts': settings.ALLOWED_HOSTS
     })
 
 urlpatterns = [

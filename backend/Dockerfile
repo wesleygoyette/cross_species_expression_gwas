@@ -26,11 +26,20 @@ COPY . .
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
 USER appuser
 
-# Collect static files and run migrations
+# Collect static files
 RUN python manage.py collectstatic --noinput --settings=regland_backend.settings
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Running database migrations..."\n\
+python manage.py migrate --noinput\n\
+echo "Starting gunicorn server..."\n\
+exec gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 regland_backend.wsgi:application' > /app/start.sh && \
+    chmod +x /app/start.sh
 
 # Expose port
 EXPOSE 8000
 
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "regland_backend.wsgi:application"]
+# Run startup script
+CMD ["/app/start.sh"]

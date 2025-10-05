@@ -23,8 +23,8 @@ services:
 
   backend:
     image: ${BACKEND_IMAGE:-ghcr.io/wesleygoyette/cross_species_expression_gwas-backend:latest}
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     environment:
       - DEBUG=False
       - SECRET_KEY=${SECRET_KEY}
@@ -61,7 +61,7 @@ services:
       backend:
         condition: service_healthy
     environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
+      - REACT_APP_API_URL=/api
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/"]
       interval: 30s

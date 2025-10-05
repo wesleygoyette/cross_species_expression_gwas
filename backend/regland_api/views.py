@@ -300,32 +300,31 @@ def export_data(request):
 # Additional utility views for CTCF and 3D analysis
 @api_view(['POST'])
 def ctcf_analysis(request):
-    """Perform CTCF and 3D domain analysis"""
-    from .utils import (
-        get_domain_region, get_ctcf_data_in_region, get_enhancers_in_domain,
-        get_gwas_in_enhancers_domain, create_ctcf_tracks_plot, 
-        create_ctcf_distance_plot, create_enhancers_per_domain_plot,
-        create_expression_association_plot, create_gwas_partition_table,
-        create_ctcf_sites_table
-    )
-    
+    """Perform CTCF and 3D domain analysis with enhanced error handling"""
     try:
-        data = request.data
-        gene_symbol = data.get('gene', 'BDNF').upper()
-        species_id = data.get('species', 'human_hg38')
-        tss_kb = int(data.get('tss_kb', 100))
+        from .utils import (
+            get_domain_region, get_ctcf_data_in_region, get_enhancers_in_domain,
+            get_gwas_in_enhancers_domain, create_ctcf_tracks_plot, 
+            create_ctcf_distance_plot, create_enhancers_per_domain_plot,
+            create_expression_association_plot, create_gwas_partition_table,
+            create_ctcf_sites_table, get_gene_region
+        )
         
-        # CTCF-specific parameters
-        link_mode = data.get('link_mode', 'tss')
+        data = request.data
+        gene_symbol = data.get('gene_symbol')
+        species_id = int(data.get('species_id', 9606))
+        link_mode = data.get('link_mode', 'gene')
         tss_kb_ctcf = int(data.get('tss_kb_ctcf', 250))
         domain_snap_tss = data.get('domain_snap_tss', True)
         ctcf_cons_groups = data.get('ctcf_cons_groups', ['conserved', 'human_specific'])
         enh_cons_groups = data.get('enh_cons_groups', ['conserved', 'gained', 'lost', 'unlabeled'])
         ctcf_dist_cap_kb = int(data.get('ctcf_dist_cap_kb', 250))
         
+        if not gene_symbol:
+            return Response({'error': 'Gene symbol is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Get base gene region
-        from .utils import get_gene_region
-        gene_data = get_gene_region(gene_symbol, species_id, tss_kb)
+        gene_data = get_gene_region(gene_symbol, species_id, tss_kb_ctcf)
         if not gene_data:
             return Response({'error': 'Gene not found'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -334,19 +333,19 @@ def ctcf_analysis(request):
             gene_data, link_mode, tss_kb_ctcf, domain_snap_tss, species_id
         )
         
-        # Get CTCF sites in domain
+        # Get CTCF sites in domain - with size limits
         ctcf_sites = get_ctcf_data_in_region(
             species_id, domain_region['chrom'], 
             domain_region['start'], domain_region['end'],
             ctcf_cons_groups
-        )
+        )[:1000]  # Limit to prevent memory issues
         
-        # Get enhancers in domain
+        # Get enhancers in domain - with size limits
         enhancers = get_enhancers_in_domain(
             species_id, domain_region['chrom'],
             domain_region['start'], domain_region['end'],
             enh_cons_groups
-        )
+        )[:1000]  # Limit to prevent memory issues
         
         # Get GWAS SNPs in enhancers
         gwas_snps = get_gwas_in_enhancers_domain(
@@ -354,13 +353,42 @@ def ctcf_analysis(request):
             domain_region['start'], domain_region['end']
         )
         
-        # Create visualizations
-        tracks_plot = create_ctcf_tracks_plot(domain_region, enhancers, ctcf_sites)
-        distance_plot = create_ctcf_distance_plot(enhancers, ctcf_sites, domain_region, ctcf_dist_cap_kb)
-        enhancers_plot = create_enhancers_per_domain_plot(enhancers)
-        expression_plot = create_expression_association_plot(enhancers, gene_symbol)
-        gwas_table = create_gwas_partition_table(enhancers, gwas_snps)
-        ctcf_table = create_ctcf_sites_table(ctcf_sites)
+        # Create visualizations with error handling
+        try:
+            tracks_plot = create_ctcf_tracks_plot(domain_region, enhancers, ctcf_sites)
+        except Exception as e:
+            print(f"Error creating tracks plot: {e}")
+            tracks_plot = {'plot_data': None, 'error': str(e)}
+            
+        try:
+            distance_plot = create_ctcf_distance_plot(enhancers, ctcf_sites, domain_region, ctcf_dist_cap_kb)
+        except Exception as e:
+            print(f"Error creating distance plot: {e}")
+            distance_plot = {'plot_data': None, 'error': str(e)}
+            
+        try:
+            enhancers_plot = create_enhancers_per_domain_plot(enhancers)
+        except Exception as e:
+            print(f"Error creating enhancers plot: {e}")
+            enhancers_plot = {'plot_data': None, 'error': str(e)}
+            
+        try:
+            expression_plot = create_expression_association_plot(enhancers, gene_symbol)
+        except Exception as e:
+            print(f"Error creating expression plot: {e}")
+            expression_plot = {'plot_data': None, 'error': str(e)}
+            
+        try:
+            gwas_table = create_gwas_partition_table(enhancers, gwas_snps)
+        except Exception as e:
+            print(f"Error creating GWAS table: {e}")
+            gwas_table = {'error': str(e)}
+            
+        try:
+            ctcf_table = create_ctcf_sites_table(ctcf_sites)
+        except Exception as e:
+            print(f"Error creating CTCF table: {e}")
+            ctcf_table = {'error': str(e)}
         
         return Response({
             'domain_region': domain_region,
@@ -381,7 +409,12 @@ def ctcf_analysis(request):
         })
         
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print(f"Error in CTCF analysis: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'error': f'Analysis failed: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])

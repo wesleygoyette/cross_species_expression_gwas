@@ -386,5 +386,21 @@ def ctcf_analysis(request):
 
 @api_view(['GET'])
 def health_check(request):
-    """Health check endpoint"""
-    return Response({'status': 'healthy', 'message': 'Regland API is running'})
+    """Health check endpoint with database connectivity verification"""
+    try:
+        # Test database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+        
+        return Response({
+            'status': 'healthy', 
+            'message': 'Regland API is running',
+            'database': 'connected'
+        })
+    except Exception as e:
+        return Response({
+            'status': 'unhealthy', 
+            'message': 'Database connection failed',
+            'error': str(e)
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)

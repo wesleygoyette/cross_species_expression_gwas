@@ -87,12 +87,29 @@ WSGI_APPLICATION = 'regland_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / os.getenv('DATABASE_PATH', '../database/regland.sqlite'),
+# Use MySQL in production, SQLite in development
+if os.getenv('USE_MYSQL', 'False').lower() == 'true':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('MYSQL_DATABASE', 'regland'),
+            'USER': os.getenv('MYSQL_USER', 'regland'),
+            'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+            'HOST': os.getenv('MYSQL_HOST', 'mysql'),
+            'PORT': os.getenv('MYSQL_PORT', '3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / os.getenv('DATABASE_PATH', '../database/regland.sqlite'),
+        }
+    }
 
 
 # Password validation

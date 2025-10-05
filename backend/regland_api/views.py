@@ -88,14 +88,17 @@ def gene_search(request):
     if not query:
         return Response({'genes': []})
     
-    # Get genes matching the query
+    # Get genes matching the query - prioritize exact matches
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT gene_id, symbol, species_id, chrom, start, end
             FROM genes
             WHERE UPPER(symbol) LIKE %s AND species_id = %s
+            ORDER BY 
+                CASE WHEN UPPER(symbol) = %s THEN 1 ELSE 2 END,
+                symbol
             LIMIT 10
-        """, [f'%{query}%', species_id])
+        """, [f'%{query}%', species_id, query])
         
         columns = [col[0] for col in cursor.description]
         genes = [dict(zip(columns, row)) for row in cursor.fetchall()]

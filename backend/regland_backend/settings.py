@@ -34,7 +34,7 @@ if not SECRET_KEY:
     else:
         raise ValueError("SECRET_KEY environment variable must be set in production")
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,crossgenome.site,www.crossgenome.site,34.71.6.38').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
 
 
 # Application definition

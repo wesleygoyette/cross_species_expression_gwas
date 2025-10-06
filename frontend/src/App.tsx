@@ -13,6 +13,15 @@ import Downloads from './pages/Downloads';
 import About from './pages/About';
 
 const theme = createTheme({
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 960,
+      lg: 1280,
+      xl: 1920,
+    },
+  },
   palette: {
     mode: 'light',
     primary: {
@@ -29,20 +38,65 @@ const theme = createTheme({
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h4: {
       fontWeight: 600,
+      fontSize: '1.75rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.5rem',
+      },
     },
     h5: {
       fontWeight: 600,
+      fontSize: '1.5rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.25rem',
+      },
     },
     h6: {
       fontWeight: 600,
+      fontSize: '1.25rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.1rem',
+      },
+    },
+    body1: {
+      '@media (max-width:600px)': {
+        fontSize: '0.9rem',
+      },
     },
   },
   components: {
+    MuiContainer: {
+      styleOverrides: {
+        root: {
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          '@media (max-width:600px)': {
+            paddingLeft: '8px',
+            paddingRight: '8px',
+          },
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {
           borderRadius: 12,
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          '@media (max-width:600px)': {
+            borderRadius: 8,
+            margin: '8px 0',
+          },
+        },
+      },
+    },
+    MuiCardContent: {
+      styleOverrides: {
+        root: {
+          '@media (max-width:600px)': {
+            padding: '12px',
+            '&:last-child': {
+              paddingBottom: '12px',
+            },
+          },
         },
       },
     },
@@ -52,6 +106,32 @@ const theme = createTheme({
           borderRadius: 8,
           textTransform: 'none',
           fontWeight: 600,
+          '@media (max-width:600px)': {
+            minHeight: '44px',
+            fontSize: '0.9rem',
+          },
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '@media (max-width:600px)': {
+            '& .MuiInputBase-root': {
+              fontSize: '16px', // Prevents zoom on iOS
+            },
+          },
+        },
+      },
+    },
+    MuiFormControl: {
+      styleOverrides: {
+        root: {
+          '@media (max-width:600px)': {
+            '& .MuiInputBase-root': {
+              fontSize: '16px', // Prevents zoom on iOS
+            },
+          },
         },
       },
     },

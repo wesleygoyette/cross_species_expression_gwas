@@ -28,9 +28,16 @@ import {
   IconButton,
   Tooltip,
   TextField,
-  Autocomplete
+  Autocomplete,
+  useTheme,
+  useMediaQuery,
+  Drawer
 } from '@mui/material';
-import { Download as DownloadIcon } from '@mui/icons-material';
+import { 
+  Download as DownloadIcon,
+  Tune as TuneIcon,
+  Close as CloseIcon
+} from '@mui/icons-material';
 import Plot from 'react-plotly.js';
 import api from '../services/api';
 
@@ -53,6 +60,10 @@ interface CTCFAnalysisData {
 }
 
 const CTCFAnalysis: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<CTCFAnalysisData | null>(null);
@@ -121,6 +132,10 @@ const CTCFAnalysis: React.FC = () => {
       });
       
       setData(response.data);
+      // Close mobile drawer when data is loaded
+      if (isMobile) {
+        setMobileControlsOpen(false);
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'An error occurred during analysis');
     } finally {
@@ -144,266 +159,336 @@ const CTCFAnalysis: React.FC = () => {
     }
   };
 
-  return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
-        CTCF & 3D Analysis
-      </Typography>
+  // Controls content component for reuse in desktop sidebar and mobile drawer
+  const ControlsContent = () => (
+    <>
+      {isMobile && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6">Analysis Controls</Typography>
+          <IconButton onClick={() => setMobileControlsOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      )}
       
-      <Box sx={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 3 }}>
-        {/* Sidebar - Controls */}
-        <Card sx={{ height: 'fit-content', position: 'sticky', top: 20 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Analysis Controls
-            </Typography>
-            
-            {/* Gene and Species */}
-            <Box sx={{ mb: 3 }}>
-              <Autocomplete
-                value={gene}
-                onChange={(_, newValue) => setGene(newValue || '')}
-                inputValue={geneInputValue}
-                onInputChange={(_, newInputValue) => setGeneInputValue(newInputValue)}
-                options={geneOptions}
-                freeSolo
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Gene Symbol"
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                  />
-                )}
-                sx={{ mb: 2 }}
-              />
-              
-              <FormControl fullWidth>
-                <FormLabel sx={{ mb: 1, fontSize: '0.875rem', fontWeight: 500 }}>
-                  Species
-                </FormLabel>
-                <RadioGroup
-                  value={species}
-                  onChange={(e) => setSpecies(e.target.value)}
-                >
-                  {speciesOptions.map((spec) => (
-                    <FormControlLabel
-                      key={spec.id}
-                      value={spec.id}
-                      control={<Radio size="small" />}
-                      label={spec.name}
-                    />
-                  ))}
-                </RadioGroup>
-              </FormControl>
-            </Box>
-
-            <Divider sx={{ my: 2 }} />
-
-            {/* Link Mode */}
-            <FormControl component="fieldset" sx={{ mb: 3 }}>
-              <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.875rem', fontWeight: 500 }}>
-                Link enhancers to gene by
-              </FormLabel>
-              <RadioGroup
-                value={linkMode}
-                onChange={(e) => setLinkMode(e.target.value)}
-              >
-                <FormControlLabel
-                  value="tss"
-                  control={<Radio size="small" />}
-                  label="TSS window"
-                />
-                <FormControlLabel
-                  value="ctcf"
-                  control={<Radio size="small" />}
-                  label="CTCF-bounded domain"
-                />
-              </RadioGroup>
-            </FormControl>
-
-            {/* TSS Window Slider (for TSS mode) */}
-            {linkMode === 'tss' && (
-              <Box sx={{ mb: 3 }}>
-                <FormLabel component="legend" sx={{ mb: 1, display: 'block', fontSize: '0.875rem', fontWeight: 500 }}>
-                  Window around TSS: {tssKbCtcf} kb
-                </FormLabel>
-                <Box sx={{ px: 1, py: 2 }}>
-                  <Slider
-                    value={tssKbCtcf}
-                    onChange={(_, value) => setTssKbCtcf(value as number)}
-                    min={10}
-                    max={1000}
-                    step={10}
-                    marks={[
-                      { value: 10, label: '10' },
-                      { value: 250, label: '250' },
-                      { value: 1000, label: '1000' }
-                    ]}
-                    valueLabelDisplay="auto"
-                    valueLabelFormat={(value) => `${value}kb`}
-                    sx={{
-                      '& .MuiSlider-markLabel': {
-                        fontSize: '0.75rem',
-                        transform: 'translateX(-50%)',
-                        '&:last-child': {
-                          transform: 'translateX(-100%)'
-                        },
-                        '&:first-of-type': {
-                          transform: 'translateX(0%)'
-                        }
-                      },
-                      '& .MuiSlider-track': {
-                        height: 4
-                      },
-                      '& .MuiSlider-thumb': {
-                        height: 16,
-                        width: 16
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
-            )}
-
-            {/* Domain Snap (for CTCF mode) */}
-            {linkMode === 'ctcf' && (
-              <Box sx={{ mb: 3 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={domainSnapTss}
-                      onChange={(e) => setDomainSnapTss(e.target.checked)}
-                    />
-                  }
-                  label="Snap to domain containing the TSS"
-                  sx={{ mb: 1 }}
-                />
-                <Typography variant="caption" color="text.secondary" sx={{ 
-                  display: 'block', 
-                  ml: 4, 
-                  lineHeight: 1.4,
-                  fontSize: '0.75rem'
-                }}>
-                  If off, the Explore Genes window is used; any TADs overlapping it are considered.
-                </Typography>
-              </Box>
-            )}
-
-            <Divider sx={{ my: 2 }} />
-
-            {/* CTCF Conservation Groups */}
-            <FormControl component="fieldset" sx={{ mb: 3 }}>
-              <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.875rem', fontWeight: 500 }}>
-                CTCF conservation
-              </FormLabel>
-              <FormGroup>
-                {ctcfConsOptions.map((group) => (
-                  <FormControlLabel
-                    key={group}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={ctcfConsGroups.includes(group)}
-                        onChange={(e) => handleCtcfConsGroupChange(group, e.target.checked)}
-                      />
-                    }
-                    label={group.replace('_', ' ')}
-                  />
-                ))}
-              </FormGroup>
-            </FormControl>
-
-            {/* Enhancer Classes */}
-            <FormControl component="fieldset" sx={{ mb: 3 }}>
-              <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.875rem', fontWeight: 500 }}>
-                Enhancer classes
-              </FormLabel>
-              <FormGroup>
-                {enhConsOptions.map((group) => (
-                  <FormControlLabel
-                    key={group}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={enhConsGroups.includes(group)}
-                        onChange={(e) => handleEnhConsGroupChange(group, e.target.checked)}
-                      />
-                    }
-                    label={group}
-                  />
-                ))}
-              </FormGroup>
-            </FormControl>
-
-            {/* Distance Cap */}
-            {/* Distance Cap Slider */}
-            <Box sx={{ mb: 3 }}>
-              <FormLabel component="legend" sx={{ mb: 1, display: 'block', fontSize: '0.875rem', fontWeight: 500 }}>
-                Cap distance plot at: {ctcfDistCapKb} kb
-              </FormLabel>
-              <Box sx={{ px: 1, py: 2 }}>
-                <Slider
-                  value={ctcfDistCapKb}
-                  onChange={(_, value) => setCtcfDistCapKb(value as number)}
-                  min={25}
-                  max={1000}
-                  step={25}
-                  marks={[
-                    { value: 25, label: '25' },
-                    { value: 250, label: '250' },
-                    { value: 1000, label: '1000' }
-                  ]}
-                  valueLabelDisplay="auto"
-                  valueLabelFormat={(value) => `${value}kb`}
-                  sx={{
-                    '& .MuiSlider-markLabel': {
-                      fontSize: '0.75rem',
-                      transform: 'translateX(-50%)',
-                      '&:last-child': {
-                        transform: 'translateX(-100%)'
-                      },
-                      '&:first-of-type': {
-                        transform: 'translateX(0%)'
-                      }
-                    },
-                    '& .MuiSlider-track': {
-                      height: 4
-                    },
-                    '& .MuiSlider-thumb': {
-                      height: 16,
-                      width: 16
-                    }
-                  }}
-                />
-              </Box>
-            </Box>
-
-            <Divider sx={{ my: 2 }} />
-
-            {/* Analyze Button */}
-            <Button
-              variant="contained"
+      {!isMobile && (
+        <Typography variant="h6" gutterBottom>
+          Analysis Controls
+        </Typography>
+      )}
+      
+      {/* Gene and Species */}
+      <Box sx={{ mb: 3 }}>
+        <Autocomplete
+          value={gene}
+          onChange={(_, newValue) => setGene(newValue || '')}
+          inputValue={geneInputValue}
+          onInputChange={(_, newInputValue) => setGeneInputValue(newInputValue)}
+          options={geneOptions}
+          freeSolo
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Gene Symbol"
+              variant="outlined"
+              size={isMobile ? "small" : "medium"}
               fullWidth
-              onClick={handleAnalyze}
-              disabled={loading}
-              sx={{ mb: 2 }}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Analyze'}
-            </Button>
+            />
+          )}
+          sx={{ mb: 2 }}
+        />
+        
+        <FormControl fullWidth>
+          <FormLabel sx={{ mb: 1, fontSize: '0.875rem', fontWeight: 500 }}>
+            Species
+          </FormLabel>
+          <RadioGroup
+            value={species}
+            onChange={(e) => setSpecies(e.target.value)}
+          >
+            {speciesOptions.map((spec) => (
+              <FormControlLabel
+                key={spec.id}
+                value={spec.id}
+                control={<Radio size={isMobile ? "small" : "medium"} />}
+                label={spec.name}
+              />
+            ))}
+          </RadioGroup>
+        </FormControl>
+      </Box>
 
-            {/* Status */}
-            {data && (
-              <Alert severity="success" sx={{ mt: 1 }}>
-                Analysis complete: {data.stats.ctcf_count} CTCF sites, {data.stats.enhancer_count} enhancers, {data.stats.gwas_snp_count} GWAS SNPs
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
+      <Divider sx={{ my: 2 }} />
+
+      {/* Link Mode */}
+      <FormControl component="fieldset" sx={{ mb: 3 }}>
+        <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.875rem', fontWeight: 500 }}>
+          Link enhancers to gene by
+        </FormLabel>
+        <RadioGroup
+          value={linkMode}
+          onChange={(e) => setLinkMode(e.target.value)}
+        >
+          <FormControlLabel
+            value="tss"
+            control={<Radio size={isMobile ? "small" : "medium"} />}
+            label="TSS window"
+          />
+          <FormControlLabel
+            value="ctcf"
+            control={<Radio size={isMobile ? "small" : "medium"} />}
+            label="CTCF-bounded domain"
+          />
+        </RadioGroup>
+      </FormControl>
+
+      {/* TSS Window Slider (for TSS mode) */}
+      {linkMode === 'tss' && (
+        <Box sx={{ mb: 3 }}>
+          <FormLabel component="legend" sx={{ mb: 1, display: 'block', fontSize: '0.875rem', fontWeight: 500 }}>
+            Window around TSS: {tssKbCtcf} kb
+          </FormLabel>
+          <Box sx={{ px: 1, py: 2 }}>
+            <Slider
+              value={tssKbCtcf}
+              onChange={(_, value) => setTssKbCtcf(value as number)}
+              min={10}
+              max={1000}
+              step={10}
+              marks={[
+                { value: 10, label: '10' },
+                { value: 250, label: '250' },
+                { value: 1000, label: '1000' }
+              ]}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `${value}kb`}
+              size={isMobile ? "small" : "medium"}
+              sx={{
+                '& .MuiSlider-markLabel': {
+                  fontSize: '0.75rem',
+                  transform: 'translateX(-50%)',
+                  '&:last-child': {
+                    transform: 'translateX(-100%)'
+                  },
+                  '&:first-of-type': {
+                    transform: 'translateX(0%)'
+                  }
+                },
+                '& .MuiSlider-track': {
+                  height: 4
+                },
+                '& .MuiSlider-thumb': {
+                  height: 16,
+                  width: 16
+                }
+              }}
+            />
+          </Box>
+        </Box>
+      )}
+
+      {/* Domain Snap (for CTCF mode) */}
+      {linkMode === 'ctcf' && (
+        <Box sx={{ mb: 3 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={domainSnapTss}
+                onChange={(e) => setDomainSnapTss(e.target.checked)}
+                size={isMobile ? "small" : "medium"}
+              />
+            }
+            label="Snap to domain containing the TSS"
+            sx={{ mb: 1 }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ 
+            display: 'block', 
+            ml: 4, 
+            lineHeight: 1.4,
+            fontSize: '0.75rem'
+          }}>
+            If off, the Explore Genes window is used; any TADs overlapping it are considered.
+          </Typography>
+        </Box>
+      )}
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* CTCF Conservation Groups */}
+      <FormControl component="fieldset" sx={{ mb: 3 }}>
+        <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.875rem', fontWeight: 500 }}>
+          CTCF conservation
+        </FormLabel>
+        <FormGroup>
+          {ctcfConsOptions.map((group) => (
+            <FormControlLabel
+              key={group}
+              control={
+                <Checkbox
+                  size={isMobile ? "small" : "medium"}
+                  checked={ctcfConsGroups.includes(group)}
+                  onChange={(e) => handleCtcfConsGroupChange(group, e.target.checked)}
+                />
+              }
+              label={group.replace('_', ' ')}
+            />
+          ))}
+        </FormGroup>
+      </FormControl>
+
+      {/* Enhancer Classes */}
+      <FormControl component="fieldset" sx={{ mb: 3 }}>
+        <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.875rem', fontWeight: 500 }}>
+          Enhancer classes
+        </FormLabel>
+        <FormGroup>
+          {enhConsOptions.map((group) => (
+            <FormControlLabel
+              key={group}
+              control={
+                <Checkbox
+                  size={isMobile ? "small" : "medium"}
+                  checked={enhConsGroups.includes(group)}
+                  onChange={(e) => handleEnhConsGroupChange(group, e.target.checked)}
+                />
+              }
+              label={group}
+            />
+          ))}
+        </FormGroup>
+      </FormControl>
+
+      {/* Distance Cap Slider */}
+      <Box sx={{ mb: 3 }}>
+        <FormLabel component="legend" sx={{ mb: 1, display: 'block', fontSize: '0.875rem', fontWeight: 500 }}>
+          Cap distance plot at: {ctcfDistCapKb} kb
+        </FormLabel>
+        <Box sx={{ px: 1, py: 2 }}>
+          <Slider
+            value={ctcfDistCapKb}
+            onChange={(_, value) => setCtcfDistCapKb(value as number)}
+            min={25}
+            max={1000}
+            step={25}
+            marks={[
+              { value: 25, label: '25' },
+              { value: 250, label: '250' },
+              { value: 1000, label: '1000' }
+            ]}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value) => `${value}kb`}
+            size={isMobile ? "small" : "medium"}
+            sx={{
+              '& .MuiSlider-markLabel': {
+                fontSize: '0.75rem',
+                transform: 'translateX(-50%)',
+                '&:last-child': {
+                  transform: 'translateX(-100%)'
+                },
+                '&:first-of-type': {
+                  transform: 'translateX(0%)'
+                }
+              },
+              '& .MuiSlider-track': {
+                height: 4
+              },
+              '& .MuiSlider-thumb': {
+                height: 16,
+                width: 16
+              }
+            }}
+          />
+        </Box>
+      </Box>
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* Analyze Button */}
+      <Button
+        variant="contained"
+        fullWidth
+        onClick={handleAnalyze}
+        disabled={loading}
+        sx={{ mb: 2 }}
+        size={isMobile ? "medium" : "large"}
+      >
+        {loading ? <CircularProgress size={24} /> : 'Analyze'}
+      </Button>
+
+      {/* Status */}
+      {data && (
+        <Alert severity="success" sx={{ mt: 1 }}>
+          Analysis complete: {data.stats.ctcf_count} CTCF sites, {data.stats.enhancer_count} enhancers, {data.stats.gwas_snp_count} GWAS SNPs
+        </Alert>
+      )}
+    </>
+  );
+
+  return (
+    <Container maxWidth="xl" sx={{ py: { xs: 1, sm: 3 } }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', md: 'center' },
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: 2,
+        mb: 3 
+      }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
+          CTCF & 3D Analysis
+        </Typography>
+        {isMobile && (
+          <Button
+            variant="outlined"
+            startIcon={<TuneIcon />}
+            onClick={() => setMobileControlsOpen(true)}
+            sx={{ alignSelf: 'flex-end' }}
+          >
+            Controls
+          </Button>
+        )}
+      </Box>
+      
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: 3, 
+        mb: 3 
+      }}>
+        {/* Desktop Sidebar - Controls */}
+        {!isMobile && (
+          <Paper sx={{ 
+            width: 320, 
+            p: 3, 
+            height: 'fit-content', 
+            position: 'sticky', 
+            top: 20,
+            maxHeight: 'calc(100vh - 40px)',
+            overflow: 'auto'
+          }}>
+            <ControlsContent />
+          </Paper>
+        )}
+
+        {/* Mobile Drawer - Controls */}
+        <Drawer
+          anchor="right"
+          open={mobileControlsOpen}
+          onClose={() => setMobileControlsOpen(false)}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': {
+              width: '90vw',
+              maxWidth: 400,
+              p: 3,
+            },
+          }}
+        >
+          <ControlsContent />
+        </Drawer>
 
         {/* Main Content */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
           {error && (
             <Alert severity="error" onClose={() => setError(null)}>
               {error}
@@ -457,18 +542,25 @@ const CTCFAnalysis: React.FC = () => {
                       xanchor: 'center',
                       yanchor: 'top',
                       font: {
-                        size: 9
+                        size: isMobile ? 8 : 9
                       },
                       itemsizing: 'constant',
-                      itemwidth: 30,
-                      tracegroupgap: 10,
+                      itemwidth: isMobile ? 25 : 30,
+                      tracegroupgap: isMobile ? 5 : 10,
                       bgcolor: 'rgba(255,255,255,0.9)',
                       bordercolor: 'rgba(0,0,0,0.3)',
                       borderwidth: 1
                     },
                     margin: {
                       ...data.tracks_plot.plot_data.layout.margin,
-                      b: 120
+                      l: isMobile ? 40 : 60,
+                      r: isMobile ? 20 : 40,
+                      t: 20,
+                      b: isMobile ? 100 : 120
+                    },
+                    height: isMobile ? 300 : 380,
+                    font: {
+                      size: isMobile ? 10 : 12
                     }
                   }}
                   config={{ 
@@ -476,12 +568,12 @@ const CTCFAnalysis: React.FC = () => {
                     responsive: true,
                     modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d', 'autoScale2d']
                   }}
-                  style={{ width: '100%', height: '380px' }}
+                  style={{ width: '100%', height: isMobile ? '300px' : '380px' }}
                 />
               ) : (
                 <Box 
                   sx={{ 
-                    height: 380, 
+                    height: isMobile ? 300 : 380, 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',
@@ -509,9 +601,22 @@ const CTCFAnalysis: React.FC = () => {
                   {data?.distance_plot ? (
                     <Plot
                       data={data.distance_plot.plot_data.data}
-                      layout={data.distance_plot.plot_data.layout}
+                      layout={{
+                        ...data.distance_plot.plot_data.layout,
+                        margin: {
+                          ...data.distance_plot.plot_data.layout.margin,
+                          l: isMobile ? 40 : 60,
+                          r: isMobile ? 20 : 40,
+                          t: isMobile ? 20 : 40,
+                          b: isMobile ? 40 : 60
+                        },
+                        height: isMobile ? 300 : 380,
+                        font: {
+                          size: isMobile ? 10 : 12
+                        }
+                      }}
                       config={{ displayModeBar: true, responsive: true }}
-                      style={{ width: '100%', height: '380px' }}
+                      style={{ width: '100%', height: isMobile ? '300px' : '380px' }}
                     />
                   ) : (
                     <Box 
@@ -543,9 +648,22 @@ const CTCFAnalysis: React.FC = () => {
                   {data?.enhancers_plot ? (
                     <Plot
                       data={data.enhancers_plot.plot_data.data}
-                      layout={data.enhancers_plot.plot_data.layout}
+                      layout={{
+                        ...data.enhancers_plot.plot_data.layout,
+                        margin: {
+                          ...data.enhancers_plot.plot_data.layout.margin,
+                          l: isMobile ? 40 : 60,
+                          r: isMobile ? 20 : 40,
+                          t: isMobile ? 20 : 40,
+                          b: isMobile ? 40 : 60
+                        },
+                        height: isMobile ? 300 : 380,
+                        font: {
+                          size: isMobile ? 10 : 12
+                        }
+                      }}
                       config={{ displayModeBar: true, responsive: true }}
-                      style={{ width: '100%', height: '380px' }}
+                      style={{ width: '100%', height: isMobile ? '300px' : '380px' }}
                     />
                   ) : (
                     <Box 
@@ -580,9 +698,22 @@ const CTCFAnalysis: React.FC = () => {
                   {data?.expression_plot ? (
                     <Plot
                       data={data.expression_plot.plot_data.data}
-                      layout={data.expression_plot.plot_data.layout}
+                      layout={{
+                        ...data.expression_plot.plot_data.layout,
+                        margin: {
+                          ...data.expression_plot.plot_data.layout.margin,
+                          l: isMobile ? 40 : 60,
+                          r: isMobile ? 20 : 40,
+                          t: isMobile ? 20 : 40,
+                          b: isMobile ? 40 : 60
+                        },
+                        height: isMobile ? 300 : 380,
+                        font: {
+                          size: isMobile ? 10 : 12
+                        }
+                      }}
                       config={{ displayModeBar: true, responsive: true }}
-                      style={{ width: '100%', height: '380px' }}
+                      style={{ width: '100%', height: isMobile ? '300px' : '380px' }}
                     />
                   ) : (
                     <Box 
@@ -612,7 +743,7 @@ const CTCFAnalysis: React.FC = () => {
                   </Typography>
                   
                   {data?.gwas_table?.table_data ? (
-                    <TableContainer component={Paper} sx={{ maxHeight: 380 }}>
+                    <TableContainer component={Paper} sx={{ maxHeight: isMobile ? 300 : 380 }}>
                       <Table size="small">
                         <TableHead>
                           <TableRow>
@@ -671,7 +802,7 @@ const CTCFAnalysis: React.FC = () => {
               </Typography>
               
               {data?.ctcf_table?.table_data ? (
-                <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                <TableContainer component={Paper} sx={{ maxHeight: isMobile ? 300 : 400 }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
@@ -702,7 +833,7 @@ const CTCFAnalysis: React.FC = () => {
               ) : (
                 <Box 
                   sx={{ 
-                    height: 200, 
+                    height: isMobile ? 150 : 200, 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',

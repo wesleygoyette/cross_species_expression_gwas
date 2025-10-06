@@ -19,7 +19,18 @@ import {
   Chip,
   Paper,
   Link,
+  Collapse,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+  Drawer,
 } from '@mui/material';
+import { 
+  ExpandMore as ExpandMoreIcon, 
+  ExpandLess as ExpandLessIcon,
+  Tune as TuneIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 import Plot from 'react-plotly.js';
 import LoadingIndicator from '../components/LoadingIndicator';
 import {
@@ -52,6 +63,15 @@ const MemoizedPlot = memo(Plot, (prevProps, nextProps) => {
 });
 
 const ExploreGenes: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
+  const [controlsExpanded, setControlsExpanded] = useState({
+    basic: true,
+    enhancer: false,
+    display: false,
+  });
+
   // State for controls
   const [gene, setGene] = useState('BDNF');
   const [species, setSpecies] = useState('human_hg38');
@@ -239,6 +259,11 @@ const ExploreGenes: React.FC = () => {
       // Force legend re-render when data is loaded (Apply button clicked)
       setLegendKey(prev => prev + 1);
       
+      // Close mobile drawer when data is loaded
+      if (isMobile) {
+        setMobileControlsOpen(false);
+      }
+      
       console.log('Data loaded successfully');
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
@@ -271,98 +296,141 @@ const ExploreGenes: React.FC = () => {
     }
   };
 
-  return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
-        Explore Genes
-      </Typography>
+  const toggleControlsSection = (section: keyof typeof controlsExpanded) => {
+    setControlsExpanded(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
-      <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
-        {/* Left Sidebar - Controls */}
-        <Paper sx={{ width: 320, p: 3, height: 'fit-content', position: 'sticky', top: 20 }}>
-          <Typography variant="h6" gutterBottom>
-            Controls
-          </Typography>
+  const ControlsContent = () => (
+    <>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6">Controls</Typography>
+        {isMobile && (
+          <IconButton onClick={() => setMobileControlsOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        )}
+      </Box>
 
-          {/* Gene Input */}
-          <TextField
-            fullWidth
-            label="Gene Symbol"
-            value={gene}
-            onChange={(e) => setGene(e.target.value)}
-            placeholder="e.g., BDNF"
-            margin="normal"
-          />
-
-          {/* Species Selection */}
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Species</InputLabel>
-            <Select value={species} onChange={(e) => setSpecies(e.target.value)} label="Species">
-              {speciesList.map((sp) => (
-                <MenuItem key={sp.id} value={sp.id}>
-                  {sp.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Tissue Selection */}
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Tissue</InputLabel>
-            <Select value={tissue} onChange={(e) => setTissue(e.target.value)} label="Tissue">
-              <MenuItem value="Liver">Liver</MenuItem>
-              <MenuItem value="Brain">Brain</MenuItem>
-              <MenuItem value="Heart">Heart</MenuItem>
-              <MenuItem value="Other">Other</MenuItem>
-            </Select>
-          </FormControl>
-
-          {/* Preset Selection */}
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Preset</InputLabel>
-            <Select value={preset} onChange={(e) => handlePresetChange(e.target.value)} label="Preset">
-              <MenuItem value="">None</MenuItem>
-              <MenuItem value="brain">Brain (BDNF, SCN1A, GRIN2B, DRD2, APOE)</MenuItem>
-              <MenuItem value="heart">Heart (TTN, MYH6, MYH7, PLN, KCNQ1)</MenuItem>
-              <MenuItem value="liver">Liver (ALB, APOB, CYP3A4, HNF4A, PCSK9)</MenuItem>
-            </Select>
-          </FormControl>
-
-          {/* Gene Suggestions */}
-          {preset && presets[preset] && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" gutterBottom>
-                Suggestions:
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {presets[preset].genes.map((suggestedGene) => (
-                  <Chip
-                    key={suggestedGene}
-                    label={suggestedGene}
-                    onClick={() => setGene(suggestedGene)}
-                    variant={gene === suggestedGene ? 'filled' : 'outlined'}
-                    size="small"
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
-
-          {/* TSS Window */}
-          <Box sx={{ mt: 3 }}>
-            <Typography gutterBottom>Distance to TSS: {tssKb} kb</Typography>
-            <Slider
-              value={tssKb}
-              onChange={(_, value) => setTssKb(value as number)}
-              min={0}
-              max={1000}
-              step={10}
-              valueLabelDisplay="auto"
+      {/* Basic Controls */}
+      <Box sx={{ mb: 2 }}>
+        <Button
+          onClick={() => toggleControlsSection('basic')}
+          sx={{ 
+            justifyContent: 'space-between', 
+            width: '100%', 
+            textTransform: 'none',
+            color: 'text.primary',
+            fontWeight: 600,
+          }}
+          endIcon={controlsExpanded.basic ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        >
+          Basic Settings
+        </Button>
+        <Collapse in={controlsExpanded.basic}>
+          <Box sx={{ mt: 2 }}>
+            {/* Gene Input */}
+            <TextField
+              fullWidth
+              label="Gene Symbol"
+              value={gene}
+              onChange={(e) => setGene(e.target.value)}
+              placeholder="e.g., BDNF"
+              margin="normal"
+              size={isMobile ? "small" : "medium"}
             />
-          </Box>
 
-          {/* Enhancer Classes */}
-          <Box sx={{ mt: 3 }}>
+            {/* Species Selection */}
+            <FormControl fullWidth margin="normal" size={isMobile ? "small" : "medium"}>
+              <InputLabel>Species</InputLabel>
+              <Select value={species} onChange={(e) => setSpecies(e.target.value)} label="Species">
+                {speciesList.map((sp) => (
+                  <MenuItem key={sp.id} value={sp.id}>
+                    {sp.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Tissue Selection */}
+            <FormControl fullWidth margin="normal" size={isMobile ? "small" : "medium"}>
+              <InputLabel>Tissue</InputLabel>
+              <Select value={tissue} onChange={(e) => setTissue(e.target.value)} label="Tissue">
+                <MenuItem value="Liver">Liver</MenuItem>
+                <MenuItem value="Brain">Brain</MenuItem>
+                <MenuItem value="Heart">Heart</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Preset Selection */}
+            <FormControl fullWidth margin="normal" size={isMobile ? "small" : "medium"}>
+              <InputLabel>Preset</InputLabel>
+              <Select value={preset} onChange={(e) => handlePresetChange(e.target.value)} label="Preset">
+                <MenuItem value="">None</MenuItem>
+                <MenuItem value="brain">Brain (BDNF, SCN1A, GRIN2B, DRD2, APOE)</MenuItem>
+                <MenuItem value="heart">Heart (TTN, MYH6, MYH7, PLN, KCNQ1)</MenuItem>
+                <MenuItem value="liver">Liver (ALB, APOB, CYP3A4, HNF4A, PCSK9)</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Gene Suggestions */}
+            {preset && presets[preset] && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" gutterBottom>
+                  Suggestions:
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {presets[preset].genes.map((suggestedGene) => (
+                    <Chip
+                      key={suggestedGene}
+                      label={suggestedGene}
+                      onClick={() => setGene(suggestedGene)}
+                      variant={gene === suggestedGene ? 'filled' : 'outlined'}
+                      size="small"
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* TSS Window */}
+            <Box sx={{ mt: 3 }}>
+              <Typography gutterBottom>Distance to TSS: {tssKb} kb</Typography>
+              <Slider
+                value={tssKb}
+                onChange={(_, value) => setTssKb(value as number)}
+                min={0}
+                max={1000}
+                step={10}
+                valueLabelDisplay="auto"
+                size={isMobile ? "small" : "medium"}
+              />
+            </Box>
+          </Box>
+        </Collapse>
+      </Box>
+
+      {/* Enhancer Controls */}
+      <Box sx={{ mb: 2 }}>
+        <Button
+          onClick={() => toggleControlsSection('enhancer')}
+          sx={{ 
+            justifyContent: 'space-between', 
+            width: '100%', 
+            textTransform: 'none',
+            color: 'text.primary',
+            fontWeight: 600,
+          }}
+          endIcon={controlsExpanded.enhancer ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        >
+          Enhancer Settings
+        </Button>
+        <Collapse in={controlsExpanded.enhancer}>
+          <Box sx={{ mt: 2 }}>
+            {/* Enhancer Classes */}
             <Typography gutterBottom>Enhancer Classes</Typography>
             {['conserved', 'gained', 'lost', 'unlabeled'].map((className) => (
               <FormControlLabel
@@ -371,81 +439,196 @@ const ExploreGenes: React.FC = () => {
                   <Checkbox
                     checked={enhancerClasses.includes(className)}
                     onChange={(e) => handleEnhancerClassChange(className, e.target.checked)}
+                    size={isMobile ? "small" : "medium"}
                   />
                 }
                 label={className.charAt(0).toUpperCase() + className.slice(1)}
+                sx={{ display: 'block' }}
               />
             ))}
-          </Box>
 
-          {/* Number of Bins */}
-          <Box sx={{ mt: 3 }}>
-            <Typography gutterBottom>Bins across window: {nbins}</Typography>
-            <Slider
-              value={nbins}
-              onChange={(_, value) => setNbins(value as number)}
-              min={10}
-              max={60}
-              step={1}
-              valueLabelDisplay="auto"
-            />
+            {/* Number of Bins */}
+            <Box sx={{ mt: 3 }}>
+              <Typography gutterBottom>Bins across window: {nbins}</Typography>
+              <Slider
+                value={nbins}
+                onChange={(_, value) => setNbins(value as number)}
+                min={10}
+                max={60}
+                step={1}
+                valueLabelDisplay="auto"
+                size={isMobile ? "small" : "medium"}
+              />
+            </Box>
           </Box>
+        </Collapse>
+      </Box>
 
-          {/* Display Options */}
-          <Box sx={{ mt: 3 }}>
-            <Typography gutterBottom>Display Options</Typography>
+      {/* Display Options */}
+      <Box sx={{ mb: 2 }}>
+        <Button
+          onClick={() => toggleControlsSection('display')}
+          sx={{ 
+            justifyContent: 'space-between', 
+            width: '100%', 
+            textTransform: 'none',
+            color: 'text.primary',
+            fontWeight: 600,
+          }}
+          endIcon={controlsExpanded.display ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        >
+          Display Options
+        </Button>
+        <Collapse in={controlsExpanded.display}>
+          <Box sx={{ mt: 2 }}>
             <FormControlLabel
-              control={<Checkbox checked={normalizeRows} onChange={(e) => setNormalizeRows(e.target.checked)} />}
+              control={<Checkbox 
+                checked={normalizeRows} 
+                onChange={(e) => setNormalizeRows(e.target.checked)}
+                size={isMobile ? "small" : "medium"}
+              />}
               label="Normalize rows (0–100%)"
+              sx={{ display: 'block' }}
             />
             <FormControlLabel
-              control={<Checkbox checked={showCounts} onChange={(e) => setShowCounts(e.target.checked)} />}
+              control={<Checkbox 
+                checked={showCounts} 
+                onChange={(e) => setShowCounts(e.target.checked)}
+                size={isMobile ? "small" : "medium"}
+              />}
               label="Show bin counts"
+              sx={{ display: 'block' }}
             />
             <FormControlLabel
-              control={<Checkbox checked={markTss} onChange={(e) => setMarkTss(e.target.checked)} />}
+              control={<Checkbox 
+                checked={markTss} 
+                onChange={(e) => setMarkTss(e.target.checked)}
+                size={isMobile ? "small" : "medium"}
+              />}
               label="Mark TSS"
+              sx={{ display: 'block' }}
             />
             <FormControlLabel
-              control={<Checkbox checked={stackTracks} onChange={(e) => setStackTracks(e.target.checked)} />}
+              control={<Checkbox 
+                checked={stackTracks} 
+                onChange={(e) => setStackTracks(e.target.checked)}
+                size={isMobile ? "small" : "medium"}
+              />}
               label="Stack lanes by class"
+              sx={{ display: 'block' }}
             />
             <FormControlLabel
-              control={<Checkbox checked={showGene} onChange={(e) => setShowGene(e.target.checked)} />}
+              control={<Checkbox 
+                checked={showGene} 
+                onChange={(e) => setShowGene(e.target.checked)}
+                size={isMobile ? "small" : "medium"}
+              />}
               label="Show gene body"
+              sx={{ display: 'block' }}
             />
             <FormControlLabel
-              control={<Checkbox checked={showSnps} onChange={(e) => setShowSnps(e.target.checked)} />}
+              control={<Checkbox 
+                checked={showSnps} 
+                onChange={(e) => setShowSnps(e.target.checked)}
+                size={isMobile ? "small" : "medium"}
+              />}
               label="Show GWAS SNPs"
+              sx={{ display: 'block' }}
             />
           </Box>
+        </Collapse>
+      </Box>
 
-          {/* Apply Button */}
-          <Button
-            variant="contained"
-            fullWidth
-            size="large"
-            onClick={loadData}
-            disabled={loading}
-            sx={{ mt: 3 }}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Apply'}
-          </Button>
+      {/* Apply Button */}
+      <Button
+        variant="contained"
+        fullWidth
+        size={isMobile ? "medium" : "large"}
+        onClick={loadData}
+        disabled={loading}
+        sx={{ mt: 3 }}
+      >
+        {loading ? <CircularProgress size={24} /> : 'Apply'}
+      </Button>
 
-          {/* Boost Coverage Button */}
+      {/* Boost Coverage Button */}
+      <Button
+        variant="outlined"
+        fullWidth
+        size="small"
+        onClick={() => {
+          setTssKb(250);
+          // Don't call loadData() immediately, let user click Apply
+        }}
+        sx={{ mt: 1 }}
+      >
+        Boost coverage (±250 kb)
+      </Button>
+    </>
+  );
+
+  return (
+    <Container maxWidth="xl" sx={{ py: { xs: 1, sm: 3 } }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', md: 'center' },
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: 2,
+        mb: 3 
+      }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
+          Explore Genes
+        </Typography>
+        {isMobile && (
           <Button
             variant="outlined"
-            fullWidth
-            size="small"
-            onClick={() => {
-              setTssKb(250);
-              // Don't call loadData() immediately, let user click Apply
-            }}
-            sx={{ mt: 1 }}
+            startIcon={<TuneIcon />}
+            onClick={() => setMobileControlsOpen(true)}
+            sx={{ alignSelf: 'flex-end' }}
           >
-            Boost coverage (±250 kb)
+            Controls
           </Button>
-        </Paper>
+        )}
+      </Box>
+
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: 3, 
+        mb: 3 
+      }}>
+        {/* Desktop Sidebar - Controls */}
+        {!isMobile && (
+          <Paper sx={{ 
+            width: 320, 
+            p: 3, 
+            height: 'fit-content', 
+            position: 'sticky', 
+            top: 20,
+            maxHeight: 'calc(100vh - 40px)',
+            overflow: 'auto'
+          }}>
+            <ControlsContent />
+          </Paper>
+        )}
+
+        {/* Mobile Drawer - Controls */}
+        <Drawer
+          anchor="right"
+          open={mobileControlsOpen}
+          onClose={() => setMobileControlsOpen(false)}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': {
+              width: '90vw',
+              maxWidth: 400,
+              p: 3,
+            },
+          }}
+        >
+          <ControlsContent />
+        </Drawer>
 
         {/* Main Content */}
         <Box sx={{ flexGrow: 1 }}>
@@ -469,40 +652,73 @@ const ExploreGenes: React.FC = () => {
                 display: 'flex', 
                 flexDirection: 'column',
                 overflow: 'hidden', // Prevent container overflow
-                minHeight: '400px'   // Ensure minimum height for labels
+                minHeight: { xs: '300px', sm: '400px' }   // Responsive minimum height
               }}>
                 {modifiedGenomeTracksPlot ? (
                   <MemoizedPlot
                     data={modifiedGenomeTracksPlot.data}
-                    layout={modifiedGenomeTracksPlot.layout}
+                    layout={{
+                      ...modifiedGenomeTracksPlot.layout,
+                      margin: {
+                        l: isMobile ? 60 : 80,
+                        r: isMobile ? 30 : 50,
+                        t: isMobile ? 30 : 50,
+                        b: isMobile ? 60 : 80,
+                        pad: 10
+                      },
+                      font: {
+                        size: isMobile ? 10 : 12,
+                      },
+                      xaxis: {
+                        ...modifiedGenomeTracksPlot.layout?.xaxis,
+                        automargin: true,
+                        tickangle: isMobile ? -45 : -30,
+                        showticklabels: true,
+                        tickfont: {
+                          size: isMobile ? 9 : 11,
+                        },
+                      },
+                      yaxis: {
+                        ...modifiedGenomeTracksPlot.layout?.yaxis,
+                        tickfont: {
+                          size: isMobile ? 9 : 11,
+                        },
+                      },
+                    }}
                     config={{ 
                       responsive: true,
-                      displayModeBar: false,
-                      staticPlot: true,
+                      displayModeBar: isMobile ? false : 'hover',
+                      staticPlot: false,
                       scrollZoom: false,
                       doubleClick: false,
-                      showTips: false,
+                      showTips: true,
                       editable: false,
                       // Performance optimizations
                       plotGlPixelRatio: 1,
                       toImageButtonOptions: {
                         format: 'png',
-                        width: 800,
-                        height: 400,
+                        width: isMobile ? 600 : 800,
+                        height: isMobile ? 300 : 400,
                         scale: 1
                       }
                     }}
                     style={{ 
                       width: '100%', 
-                      height: '380px',
+                      height: isMobile ? '300px' : '380px',
                       flexShrink: 0,
-                      minHeight: '380px' // Ensure minimum height
+                      minHeight: isMobile ? '300px' : '380px'
                     }}
                     useResizeHandler={true}
                   />
                 ) : (
-                  <Box sx={{ height: 380, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Typography color="text.secondary">
+                  <Box sx={{ 
+                    height: { xs: 300, sm: 380 }, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    flexShrink: 0 
+                  }}>
+                    <Typography color="text.secondary" align="center">
                       {loading ? 'Loading genome tracks...' : 'Click Apply to load genome tracks'}
                     </Typography>
                   </Box>
@@ -634,11 +850,23 @@ const ExploreGenes: React.FC = () => {
           )}
 
           {/* Bottom Row - Conservation Matrix and Expression */}
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, mb: 3 }}>
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
+            gap: 3, 
+            mb: 3 
+          }}>
             {/* Conservation Matrix */}
             <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 1,
+                  mb: 2 
+                }}>
                   <Typography variant="h6">Conservation Matrix</Typography>
                   <Button variant="outlined" size="small">
                     Download PNG
@@ -652,7 +880,7 @@ const ExploreGenes: React.FC = () => {
                         x: conservationMatrix.bins.map((_: any, i: number) => {
                           const pos = conservationMatrix.region_start + (i + 0.5) * ((conservationMatrix.region_end - conservationMatrix.region_start) / conservationMatrix.nbins);
                           // Only show labels for every few bins to prevent overcrowding
-                          const showEveryNth = Math.max(1, Math.floor(conservationMatrix.nbins / 8));
+                          const showEveryNth = Math.max(1, Math.floor(conservationMatrix.nbins / (isMobile ? 4 : 8)));
                           if (i % showEveryNth === 0 || i === conservationMatrix.nbins - 1) {
                             return (pos / 1e6).toFixed(1) + ' Mb';
                           }
@@ -667,8 +895,14 @@ const ExploreGenes: React.FC = () => {
                         showscale: true,
                         colorbar: {
                           title: {
-                            text: conservationMatrix.normalized ? '% of row max' : 'Count'
-                          }
+                            text: conservationMatrix.normalized ? '% of row max' : 'Count',
+                            font: {
+                              size: isMobile ? 10 : 12,
+                            },
+                          },
+                          tickfont: {
+                            size: isMobile ? 9 : 11,
+                          },
                         }
                       }
                     ]}
@@ -679,17 +913,31 @@ const ExploreGenes: React.FC = () => {
                         },
                         tickangle: -45,
                         tickmode: 'linear',
-                        dtick: Math.max(1, Math.floor(conservationMatrix.nbins / 8)),
-                        automargin: true
+                        dtick: Math.max(1, Math.floor(conservationMatrix.nbins / (isMobile ? 4 : 8))),
+                        automargin: true,
+                        tickfont: {
+                          size: isMobile ? 9 : 11,
+                        },
                       },
                       yaxis: {
                         title: {
                           text: ''
                         },
-                        automargin: true
+                        automargin: true,
+                        tickfont: {
+                          size: isMobile ? 9 : 11,
+                        },
                       },
-                      margin: { l: 80, r: 50, t: 20, b: 80 },
-                      height: 420,
+                      margin: { 
+                        l: isMobile ? 60 : 80, 
+                        r: isMobile ? 30 : 50, 
+                        t: 20, 
+                        b: isMobile ? 60 : 80 
+                      },
+                      height: isMobile ? 300 : 420,
+                      font: {
+                        size: isMobile ? 10 : 12,
+                      },
                       shapes: markTss && conservationMatrix.tss_position ? [
                         {
                           type: 'line',
@@ -707,15 +955,21 @@ const ExploreGenes: React.FC = () => {
                     }}
                     config={{
                       responsive: true,
-                      displayModeBar: false,
-                      staticPlot: true,
+                      displayModeBar: isMobile ? false : 'hover',
+                      staticPlot: false,
                       scrollZoom: false
                     }}
-                    style={{ width: '100%', height: '420px' }}
+                    style={{ width: '100%', height: isMobile ? '300px' : '420px' }}
+                    useResizeHandler={true}
                   />
                 ) : (
-                  <Box sx={{ height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography color="text.secondary">
+                  <Box sx={{ 
+                    height: { xs: 300, sm: 420 }, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                  }}>
+                    <Typography color="text.secondary" align="center">
                       {loading ? 'Loading conservation matrix...' : 'Click Apply to load conservation matrix'}
                     </Typography>
                   </Box>
@@ -726,9 +980,22 @@ const ExploreGenes: React.FC = () => {
             {/* Expression */}
             <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 1,
+                  mb: 2 
+                }}>
                   <Typography variant="h6">Expression (per tissue)</Typography>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: 1, 
+                    alignItems: 'center',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    flexWrap: 'wrap'
+                  }}>
                     <FormControlLabel
                       control={
                         <Checkbox
@@ -738,6 +1005,7 @@ const ExploreGenes: React.FC = () => {
                         />
                       }
                       label="log10(TPM+1)"
+                      sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }}
                     />
                     <FormControlLabel
                       control={
@@ -748,6 +1016,7 @@ const ExploreGenes: React.FC = () => {
                         />
                       }
                       label="Show values"
+                      sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }}
                     />
                     <Button variant="outlined" size="small">
                       Download CSV
@@ -757,18 +1026,49 @@ const ExploreGenes: React.FC = () => {
                 {expressionPlot?.plot_data ? (
                   <Plot
                     data={expressionPlot.plot_data.data}
-                    layout={expressionPlot.plot_data.layout}
+                    layout={{
+                      ...expressionPlot.plot_data.layout,
+                      margin: {
+                        l: isMobile ? 60 : 80,
+                        r: isMobile ? 30 : 50,
+                        t: isMobile ? 20 : 30,
+                        b: isMobile ? 60 : 80,
+                      },
+                      height: isMobile ? 280 : 340,
+                      font: {
+                        size: isMobile ? 10 : 12,
+                      },
+                      xaxis: {
+                        ...expressionPlot.plot_data.layout?.xaxis,
+                        tickfont: {
+                          size: isMobile ? 9 : 11,
+                        },
+                        tickangle: isMobile ? -45 : -30,
+                      },
+                      yaxis: {
+                        ...expressionPlot.plot_data.layout?.yaxis,
+                        tickfont: {
+                          size: isMobile ? 9 : 11,
+                        },
+                      },
+                    }}
                     config={{
                       responsive: true,
-                      displayModeBar: false,
-                      staticPlot: true,
+                      displayModeBar: isMobile ? false : 'hover',
+                      staticPlot: false,
                       scrollZoom: false
                     }}
-                    style={{ width: '100%', height: '340px' }}
+                    style={{ width: '100%', height: isMobile ? '280px' : '340px' }}
+                    useResizeHandler={true}
                   />
                 ) : (
-                  <Box sx={{ height: 340, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography color="text.secondary">
+                  <Box sx={{ 
+                    height: { xs: 280, sm: 340 }, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                  }}>
+                    <Typography color="text.secondary" align="center">
                       {loading ? 'Loading expression data...' : 'Click Apply to load expression data'}
                     </Typography>
                   </Box>
@@ -780,7 +1080,14 @@ const ExploreGenes: React.FC = () => {
           {/* GWAS Table */}
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: 1,
+                mb: 2 
+              }}>
                 <Typography variant="h6">
                   GWAS hits (near gene)
                   {geneRegionData?.gwas_snps && ` - ${geneRegionData.gwas_snps.length} found`}
@@ -790,53 +1097,129 @@ const ExploreGenes: React.FC = () => {
                 </Button>
               </Box>
               {geneRegionData?.gwas_snps?.length ? (
-                <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+                <Box sx={{ maxHeight: { xs: 300, sm: 400 }, overflow: 'auto' }}>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {appliedShowSnps ? 'Showing in genome tracks and table below' : 'Hidden from genome tracks - shown in table below'}
                   </Typography>
                   
                   {/* Simple table implementation */}
-                  <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                  <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1, overflow: 'auto' }}>
                     {/* Table header */}
                     <Box sx={{ 
                       display: 'grid', 
-                      gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', 
+                      gridTemplateColumns: { 
+                        xs: '1fr 1fr 2fr', // Mobile: rsID, Position, Trait
+                        sm: '1fr 1fr 1.5fr 1fr 1fr' // Desktop: all columns
+                      }, 
                       gap: 1, 
                       p: 1, 
                       backgroundColor: '#f5f5f5',
                       fontWeight: 'bold',
-                      fontSize: '0.875rem'
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      minWidth: { xs: 'auto', sm: '600px' }
                     }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>rsID</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Position</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Trait</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>P-value</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Category</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 'inherit' }}>rsID</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 'inherit' }}>Position</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 'inherit' }}>Trait</Typography>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          fontSize: 'inherit',
+                          display: { xs: 'none', sm: 'block' }
+                        }}
+                      >
+                        P-value
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          fontSize: 'inherit',
+                          display: { xs: 'none', sm: 'block' }
+                        }}
+                      >
+                        Category
+                      </Typography>
                     </Box>
                     
                     {/* Table rows - limit to first 15 for better performance */}
                     {geneRegionData.gwas_snps.slice(0, 15).map((snp, index) => (
                       <Box key={snp.snp_id || index} sx={{ 
                         display: 'grid', 
-                        gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', 
+                        gridTemplateColumns: { 
+                          xs: '1fr 1fr 2fr',
+                          sm: '1fr 1fr 1.5fr 1fr 1fr'
+                        }, 
                         gap: 1, 
                         p: 1, 
                         borderTop: index > 0 ? '1px solid #e0e0e0' : 'none',
-                        '&:hover': { backgroundColor: '#f9f9f9' }
+                        '&:hover': { backgroundColor: '#f9f9f9' },
+                        minWidth: { xs: 'auto', sm: '600px' }
                       }}>
-                        <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{snp.rsid || 'N/A'}</Typography>
-                        <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{snp.pos?.toLocaleString()}</Typography>
-                        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{snp.trait}</Typography>
-                        <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{snp.pval ? snp.pval.toExponential(2) : 'N/A'}</Typography>
-                        <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
-                          <Chip label={snp.category || 'Unknown'} size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />
+                        <Typography variant="body2" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                          {snp.rsid || 'N/A'}
                         </Typography>
+                        <Typography variant="body2" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                          {snp.pos?.toLocaleString()}
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                            lineHeight: 1.2,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: isMobile ? 'normal' : 'nowrap'
+                          }}
+                          title={snp.trait} // Show full text on hover
+                        >
+                          {snp.trait}
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                            display: { xs: 'none', sm: 'block' }
+                          }}
+                        >
+                          {snp.pval ? snp.pval.toExponential(2) : 'N/A'}
+                        </Typography>
+                        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                          <Chip 
+                            label={snp.category || 'Unknown'} 
+                            size="small" 
+                            variant="outlined" 
+                            sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' } }}
+                          />
+                        </Box>
+                        
+                        {/* Mobile: Show P-value and Category in a second row */}
+                        {isMobile && (
+                          <Box sx={{ 
+                            gridColumn: '1 / -1',
+                            display: 'flex',
+                            gap: 2,
+                            mt: 1,
+                            flexWrap: 'wrap'
+                          }}>
+                            <Typography variant="body2" sx={{ fontSize: '0.7rem' }}>
+                              P: {snp.pval ? snp.pval.toExponential(2) : 'N/A'}
+                            </Typography>
+                            <Chip 
+                              label={snp.category || 'Unknown'} 
+                              size="small" 
+                              variant="outlined" 
+                              sx={{ fontSize: '0.6rem', height: '20px' }}
+                            />
+                          </Box>
+                        )}
                       </Box>
                     ))}
                     
                     {geneRegionData.gwas_snps.length > 15 && (
                       <Box sx={{ p: 1, textAlign: 'center', borderTop: '1px solid #e0e0e0', backgroundColor: '#f9f9f9' }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
                           Showing first 15 of {geneRegionData.gwas_snps.length} SNPs
                         </Typography>
                       </Box>
@@ -845,7 +1228,7 @@ const ExploreGenes: React.FC = () => {
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
-                  <Typography color="text.secondary">
+                  <Typography color="text.secondary" align="center">
                     {loading ? 'Loading GWAS data...' : 
                      geneRegionData ? 'No GWAS SNPs found in this region' : 'Click Apply to load GWAS data'}
                   </Typography>

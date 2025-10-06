@@ -208,13 +208,9 @@ if os.getenv('USE_MYSQL', 'False').lower() == 'true':
         'write_timeout': 60,
         'charset': 'utf8mb4',
         'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        # Connection pooling
-        'CONN_MAX_AGE': 600,  # 10 minutes
-        'ATOMIC_REQUESTS': True,
     })
-
-# Database connection pooling
-DATABASES['default']['CONN_MAX_AGE'] = 600
+    # Connection pooling for MySQL
+    DATABASES['default']['CONN_MAX_AGE'] = 600  # 10 minutes
 
 # Performance optimization settings
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB

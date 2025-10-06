@@ -1,0 +1,5 @@
+# Global code ownership - requires review from repository owner for all files
+# This ensures that any changes to any file in the repository require approval from the code owner
+
+# Make wesleygoyette the owner of all files in the repository
+* @wesleygoyette

@@ -2,6 +2,42 @@
 
 This is a modern web application for exploring evolutionary conservation of gene regulatory landscapes across species, available at **https://crossgenome.site**. Originally developed as an R Shiny application, it has been completely rewritten using a Python/Django backend with a React/TypeScript frontend to provide better performance, scalability, and user experience.
 
+---
+
+## 📑 Table of Contents
+
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+  - [Backend](#backend)
+  - [Frontend](#frontend)
+  - [DevOps & CI/CD](#devops--cicd)
+- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [Detailed Setup Instructions](#detailed-setup-instructions)
+  - [Prerequisites](#prerequisites)
+  - [Database Setup](#database-setup-required-first)
+  - [Backend Setup](#backend-setup)
+  - [Frontend Setup](#frontend-setup)
+- [Environment Variables](#environment-variables)
+  - [Backend Environment](#backend-environment-variables-backendenv)
+  - [Frontend Environment](#frontend-environment-variables-frontendenv)
+  - [Production Environment](#production-environment-variables)
+- [API Endpoints](#api-endpoints)
+- [Database Schema](#database)
+- [CI/CD Pipeline](#cicd-pipeline)
+  - [Pipeline Overview](#pipeline-overview)
+  - [Automated Testing](#automated-testing)
+  - [Build & Deployment](#build--deployment-process)
+  - [Automatic Rollback](#automatic-rollback-system)
+  - [SSL/TLS Security](#ssltls-security)
+  - [Triggering Deployments](#triggering-deployments)
+- [Usage Guide](#usage)
+- [Key Features](#key-features)
+- [Development Journey](#development-journey)
+- [Scientific Background & Citation](#scientific-background--citation)
+
+---
+
 ## Features
 
 - **Explore Genes**: Visualize enhancer conservation, expression and GWAS overlap around genes
@@ -44,6 +80,10 @@ Project Alpha/
 │   ├── regland_api/           # Main Django app with API endpoints
 │   ├── requirements.txt       # Python dependencies
 │   └── manage.py             # Django management script
+├── database/
+│   ├── init.sql              # Database initialization script
+│   ├── regland.sqlite        # Main RegLand SQLite database
+│   └── README.md            # Database setup instructions
 ├── frontend/
 │   ├── src/
 │   │   ├── components/       # Reusable React components
@@ -53,33 +93,106 @@ Project Alpha/
 │   ├── package.json         # Node.js dependencies
 │   ├── public/             # Static assets
 │   └── build/              # Production build output
-├── start-backend.sh          # Backend startup script
-├── start-frontend.sh         # Frontend startup script
+├── docker-compose.local.yml  # Local development Docker setup
+├── docker-compose.prod.yml   # Production Docker setup
+├── run-dev-setup.sh         # One-command development setup
+├── start-dev-backend.sh     # Development backend startup script
+├── start-dev-frontend.sh    # Development frontend startup script
+├── Makefile                 # Development and deployment commands
 └── README.md
 ```
 
 ## Quick Start
 
-For convenience, you can use the provided startup scripts:
+**🚀 One-command setup:**
+
+```bash
+./run-dev-setup.sh
+```
+
+This script will:
+- Create environment files from templates
+- Set up Python virtual environment and dependencies  
+- Install Node.js dependencies
+- Provide next steps
+
+**⚠️ Prerequisites:** Before running the setup script, ensure you have Git LFS installed and the database file downloaded:
+
+```bash
+# Install Git LFS (if needed)
+brew install git-lfs  # macOS with Homebrew
+
+# Download the database
+git lfs install
+git lfs pull
+```
+
+**Manual setup:**
+
+```bash
+# Set up environment files
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+**⚠️ Important:** After setup, edit `backend/.env` and update the `SECRET_KEY` with a secure value. You can generate one using:
+
+```bash
+cd backend && python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+**Start the development servers:**
 
 ```bash
 # Start the backend server
-./start-backend.sh
+./start-dev-backend.sh
 
 # In another terminal, start the frontend
-./start-frontend.sh
+./start-dev-frontend.sh
 ```
 
-**Production Deployment**: The project includes automated CI/CD via GitHub Actions. Simply push to the main branch to trigger testing, building, and deployment to production infrastructure.
+**Production Deployment**: The project includes automated CI/CD via GitHub Actions. To deploy:
+1. Create a Pull Request with your changes
+2. Get PR reviewed and approved
+3. Merge to main branch to trigger automated testing, building, and deployment to production infrastructure
 
 Or follow the detailed setup instructions below.
 
-## Setup Instructions
+## Detailed Setup Instructions
 
 ### Prerequisites
 - Python 3.8+
 - Node.js 16+
 - npm or yarn
+- Git LFS (for database files)
+
+### Database Setup (Required First)
+
+The application uses a SQLite database stored in Git LFS. You **must** download the full database file before starting the development servers.
+
+1. **Install Git LFS** (if not already installed):
+   ```bash
+   # On macOS with Homebrew:
+   brew install git-lfs
+   
+   # On Ubuntu/Debian:
+   sudo apt install git-lfs
+   
+   # On other systems, see: https://git-lfs.github.io/
+   ```
+
+2. **Initialize and pull LFS files**:
+   ```bash
+   git lfs install
+   git lfs pull
+   ```
+
+3. **Verify the database was downloaded**:
+   ```bash
+   ls -lh database/regland.sqlite
+   ```
+   The file should show its actual size (not just a few bytes). If it's only a few bytes, run `git lfs pull` again.
+
+⚠️ **Important**: The development servers will not work without the full database file from Git LFS.
 
 ### Backend Setup
 
@@ -88,23 +201,33 @@ Or follow the detailed setup instructions below.
    cd backend
    ```
 
-2. Create and activate a virtual environment:
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit the `.env` file and update the `SECRET_KEY`. You can generate a secure key with:
+   ```bash
+   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+   ```
+
+3. Create and activate a virtual environment:
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. Install Python dependencies:
+4. Install Python dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-4. Run Django migrations (if needed):
+5. Run Django migrations (if needed):
    ```bash
    python manage.py migrate
    ```
 
-5. Start the Django development server:
+6. Start the Django development server:
    ```bash
    python manage.py runserver
    ```
@@ -118,17 +241,56 @@ The backend API will be available at `http://localhost:8000/`
    cd frontend
    ```
 
-2. Install Node.js dependencies:
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   The default values should work for local development, but you can modify the backend API URL if needed.
+
+3. Install Node.js dependencies:
    ```bash
    npm install
    ```
 
-3. Start the React development server:
+4. Start the React development server:
    ```bash
    npm start
    ```
 
 The frontend will be available at `http://localhost:3000/`
+
+## Environment Variables
+
+This project uses environment variables to configure both the backend and frontend. Example files are provided to get you started quickly.
+
+### Backend Environment Variables (backend/.env)
+
+Copy `backend/.env.example` to `backend/.env` and configure:
+
+- `SECRET_KEY`: Django secret key (⚠️ **Generate a new one for production!**)
+- `DEBUG`: Set to `True` for development, `False` for production
+- `ALLOWED_HOSTS`: Comma-separated list of allowed hostnames
+- `DATABASE_PATH`: Path to SQLite database for development
+- `USE_MYSQL`: Set to `True` to use MySQL instead of SQLite
+- `MYSQL_*`: MySQL connection settings (for production)
+- `CORS_ALLOWED_ORIGINS`: Allowed origins for CORS (frontend URLs)
+
+### Frontend Environment Variables (frontend/.env)
+
+Copy `frontend/.env.example` to `frontend/.env` and configure:
+
+- `REACT_APP_API_URL`: Backend API URL (must start with `REACT_APP_`)
+- `GENERATE_SOURCEMAP`: Set to `false` to disable source maps
+
+### Production Environment Variables
+
+Production deployments use GitHub Secrets to inject sensitive environment variables:
+
+- `SECRET_KEY`: Django secret key
+- `ALLOWED_HOSTS`: Production domain names
+- `CORS_ALLOWED_ORIGINS`: Production frontend URLs
+- `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`: Database credentials
 
 ## API Endpoints
 
@@ -306,17 +468,6 @@ The pipeline automatically triggers on:
 - Security-hardened configurations
 - Load balancer ready setup
 
-## Development Journey
-
-### Migration from R Shiny
-This application was originally built as an R Shiny application but has been completely rewritten to provide:
-
-- **Better Performance**: Faster data processing with pandas/NumPy and optimized React components
-- **Modern UI/UX**: Clean, responsive interface built with Material-UI
-- **Scalability**: RESTful API architecture allows for future mobile apps and integrations
-- **Developer Experience**: TypeScript for better code maintainability and fewer runtime errors
-- **Deployment Flexibility**: Standard Django/React stack with multiple deployment options
-
 ## Usage
 
 1. Start both backend and frontend servers (see Quick Start or Setup Instructions above)
@@ -337,6 +488,17 @@ This application was originally built as an R Shiny application but has been com
 - **Tissue-Specific Analysis**: Compare regulatory patterns across different tissues
 - **Interactive Visualizations**: Powered by Plotly for dynamic data exploration
 - **Real-Time Updates**: Responsive interface with live data filtering and parameter adjustment
+
+## Development Journey
+
+### Migration from R Shiny
+This application was originally built as an R Shiny application but has been completely rewritten to provide:
+
+- **Better Performance**: Faster data processing with pandas/NumPy and optimized React components
+- **Modern UI/UX**: Clean, responsive interface built with Material-UI
+- **Scalability**: RESTful API architecture allows for future mobile apps and integrations
+- **Developer Experience**: TypeScript for better code maintainability and fewer runtime errors
+- **Deployment Flexibility**: Standard Django/React stack with multiple deployment options
 
 ## Scientific Background & Citation
 

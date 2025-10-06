@@ -81,8 +81,8 @@ def get_combined_region_data(gene_data, species_id, tissue, enhancer_classes,
         'expr_data': expr_data
     }
     
-    # Cache the result for 5 minutes
-    cache.set(cache_key_hash, result, 300)
+    # Cache the result for 15 minutes (was 5 minutes)
+    cache.set(cache_key_hash, result, 900)
     
     return result
 
@@ -111,7 +111,7 @@ def get_enhancers_in_region_optimized(cursor, species_id, chrom, start, end, tis
         params.extend(enhancer_classes)
     
     # Add ordering and limit for performance - prioritize by score/class
-    query += " ORDER BY COALESCE(e.score, 0) DESC, e.start LIMIT 5000"
+    query += " ORDER BY COALESCE(e.score, 0) DESC, e.start LIMIT 1000"
     
     cursor.execute(query, params)
     columns = [col[0] for col in cursor.description]
@@ -128,7 +128,7 @@ def get_gwas_snps_in_region_optimized(cursor, gene_id, chrom, start, end):
         JOIN gene_to_enhancer ge ON ge.enh_id = e.enh_id
         WHERE ge.gene_id = %s AND s.chrom = %s AND s.pos BETWEEN %s AND %s
         ORDER BY COALESCE(s.pval, 1e99) ASC, s.rsid ASC
-        LIMIT 50
+        LIMIT 25
     """, [gene_id, chrom, start, end])
     
     columns = [col[0] for col in cursor.description]
@@ -143,7 +143,7 @@ def get_ctcf_sites_in_region_optimized(cursor, species_id, chrom, start, end):
         FROM ctcf_sites
         WHERE species_id = %s AND chrom = %s AND start < %s AND end > %s
         ORDER BY COALESCE(score, 0) DESC
-        LIMIT 200
+        LIMIT 100
     """, [species_id, chrom, end, start])
     
     columns = [col[0] for col in cursor.description]

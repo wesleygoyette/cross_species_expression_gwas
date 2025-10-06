@@ -39,6 +39,10 @@ static/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Allow example/template files
+!.env.example
+!.env.*.example
 .venv
 venv/
 ENV/

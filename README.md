@@ -27,6 +27,14 @@ This is a modern web application for exploring evolutionary conservation of gene
 - **Axios** for API communication
 - **React Router** for navigation
 
+### DevOps & CI/CD
+- **GitHub Actions** for automated testing and deployment
+- **Docker & Docker Compose** for containerization and orchestration
+- **GitHub Container Registry** for image storage
+- **MySQL 8.0** for production database
+- **Self-hosted runners** for deployment infrastructure
+- **Nginx** for production web serving
+
 ## Project Structure
 
 ```
@@ -61,6 +69,8 @@ For convenience, you can use the provided startup scripts:
 # In another terminal, start the frontend
 ./start-frontend.sh
 ```
+
+**Production Deployment**: The project includes automated CI/CD via GitHub Actions. Simply push to the main branch to trigger testing, building, and deployment to production infrastructure.
 
 Or follow the detailed setup instructions below.
 
@@ -143,6 +153,123 @@ The application uses the existing `regland.sqlite` database from the original R 
 - **gwas_snps**: GWAS SNP associations
 - **ctcf_sites**: CTCF binding sites with conservation information
 - **tad_domains**: TAD (Topologically Associating Domain) boundaries
+
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment with a comprehensive automated pipeline.
+
+### Pipeline Overview
+
+The CI/CD pipeline consists of three main stages:
+
+1. **Test** - Automated testing for both backend and frontend
+2. **Build & Push** - Docker image creation and registry storage  
+3. **Deploy** - Automated deployment to self-hosted infrastructure
+
+### Automated Testing
+
+**Backend Testing (Django)**
+- Python 3.11 environment setup
+- Dependency installation via `requirements.txt`
+- Django test suite execution with `python manage.py test`
+
+**Frontend Testing (React/TypeScript)**  
+- Node.js 20 environment with npm caching
+- Dependency installation via `npm ci`
+- Jest test suite with coverage reporting
+- Tests run in non-watch mode for CI compatibility
+
+### Build & Deployment Process
+
+**Docker Image Management**
+- Separate images for backend and frontend components
+- Images pushed to GitHub Container Registry (ghcr.io)
+- Automatic tagging with branch names, commit SHAs, and `latest` for main branch
+- Metadata extraction for proper image labeling
+
+**Production Deployment**
+- Self-hosted runner deployment for main branch
+- Docker Compose orchestration with production configuration
+- MySQL 8.0 database with health checks
+- Environment variable management via GitHub Secrets
+- Service health monitoring and automatic rollback capabilities
+
+### Infrastructure Components
+
+**Database (MySQL 8.0)**
+- Persistent data volumes
+- Health check monitoring
+- Automatic schema initialization
+- Root and application user management
+
+**Backend Service (Django)**
+- Production-optimized Docker container
+- Environment-based configuration
+- Static file serving
+- Health endpoint monitoring
+- Database connection management
+
+**Frontend Service (React)**
+- Nginx-served static assets
+- Production build optimization
+- Reverse proxy configuration
+- SSL termination ready
+
+### Environment Configuration
+
+The pipeline uses GitHub Secrets for secure environment management:
+
+```bash
+SECRET_KEY              # Django secret key
+DEBUG                   # Debug mode setting
+ALLOWED_HOSTS           # Django allowed hosts
+CORS_ALLOWED_ORIGINS    # CORS configuration
+MYSQL_ROOT_PASSWORD     # Database root password
+MYSQL_DATABASE          # Database name
+MYSQL_USER              # Application database user
+MYSQL_PASSWORD          # Application database password
+```
+
+### Deployment Features
+
+**Automated Cleanup**
+- Pre-deployment container and image cleanup
+- Post-deployment removal of unused Docker resources
+- Build cache management to prevent storage issues
+- Workspace artifact cleanup while preserving logs
+
+**Health Monitoring**
+- Service health checks with configurable timeouts
+- Automatic service restart on failure
+- Deployment verification with 300-second timeout
+- Graceful handling of deployment failures
+
+**Resource Management**
+- Docker image versioning and cleanup
+- Automatic removal of old image versions
+- System resource optimization
+- Volume and network management
+
+### Triggering Deployments
+
+The pipeline automatically triggers on:
+- **Push to main branch**: Full test → build → deploy cycle
+- **Pull requests**: Testing only (no deployment)
+- **Manual dispatch**: On-demand pipeline execution via GitHub UI
+
+### Local Development vs Production
+
+**Local Development** (`docker-compose.local.yml`)
+- SQLite database for rapid development
+- Hot reload for both frontend and backend
+- Development server configurations
+- Local port exposure for debugging
+
+**Production** (`docker-compose.prod.yml`)  
+- MySQL database with persistence
+- Production-optimized builds
+- Security-hardened configurations
+- Load balancer ready setup
 
 ## Development Journey
 

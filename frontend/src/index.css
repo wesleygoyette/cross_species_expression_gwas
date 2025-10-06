@@ -9,6 +9,23 @@ body {
     /* Prevent text zoom on iOS */
     touch-action: manipulation;
     /* Optimize touch interactions */
+    /* Prevent user zoom */
+    -webkit-user-zoom: fixed;
+    -ms-user-zoom: fixed;
+}
+
+/* Prevent zoom on all elements */
+* {
+    touch-action: manipulation;
+}
+
+/* Specifically target input elements to prevent zoom on focus */
+input,
+textarea,
+select {
+    font-size: 16px !important;
+    /* iOS doesn't zoom if font-size is 16px or larger */
+    touch-action: manipulation;
 }
 
 code {

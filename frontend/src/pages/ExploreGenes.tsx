@@ -688,11 +688,12 @@ const ExploreGenes: React.FC = () => {
                     config={{ 
                       responsive: true,
                       displayModeBar: isMobile ? false : 'hover',
-                      staticPlot: false,
+                      staticPlot: true,
                       scrollZoom: false,
                       doubleClick: false,
-                      showTips: true,
+                      showTips: false,
                       editable: false,
+                      modeBarButtonsToRemove: ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d'],
                       // Performance optimizations
                       plotGlPixelRatio: 1,
                       toImageButtonOptions: {

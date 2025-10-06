@@ -194,6 +194,18 @@ The CI/CD pipeline consists of three main stages:
 - Environment variable management via GitHub Secrets
 - Service health monitoring and automatic rollback capabilities
 
+### Automatic Rollback System
+
+The deployment pipeline includes a simple but effective rollback mechanism:
+
+1. **Backup Creation**: Before each deployment, current working images are tagged as `:backup`
+2. **Health Check Monitoring**: New deployment must pass health checks within 5 minutes
+3. **Automatic Restoration**: If health checks fail, the system automatically:
+   - Stops the failed deployment
+   - Restores the previous working version using backup images
+   - Verifies the rollback is healthy within 3 minutes
+4. **Cleanup**: Successful deployments remove backup images; failed deployments preserve them
+
 ### Infrastructure Components
 
 **Database (MySQL 8.0)**
@@ -240,9 +252,9 @@ MYSQL_PASSWORD          # Application database password
 
 **Health Monitoring**
 - Service health checks with configurable timeouts
-- Automatic service restart on failure
+- Automatic rollback to previous version on deployment failure
 - Deployment verification with 300-second timeout
-- Graceful handling of deployment failures
+- Graceful handling of deployment failures with restoration
 
 **Resource Management**
 - Docker image versioning and cleanup

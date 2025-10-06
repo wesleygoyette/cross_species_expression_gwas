@@ -566,7 +566,12 @@ const CTCFAnalysis: React.FC = () => {
                   config={{ 
                     displayModeBar: true, 
                     responsive: true,
-                    modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d', 'autoScale2d']
+                    staticPlot: true,
+                    scrollZoom: false,
+                    doubleClick: false,
+                    showTips: false,
+                    editable: false,
+                    modeBarButtonsToRemove: ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
                   }}
                   style={{ width: '100%', height: isMobile ? '300px' : '380px' }}
                 />
@@ -615,7 +620,16 @@ const CTCFAnalysis: React.FC = () => {
                           size: isMobile ? 10 : 12
                         }
                       }}
-                      config={{ displayModeBar: true, responsive: true }}
+                      config={{ 
+                        displayModeBar: true, 
+                        responsive: true,
+                        staticPlot: true,
+                        scrollZoom: false,
+                        doubleClick: false,
+                        showTips: false,
+                        editable: false,
+                        modeBarButtonsToRemove: ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+                      }}
                       style={{ width: '100%', height: isMobile ? '300px' : '380px' }}
                     />
                   ) : (
@@ -662,7 +676,16 @@ const CTCFAnalysis: React.FC = () => {
                           size: isMobile ? 10 : 12
                         }
                       }}
-                      config={{ displayModeBar: true, responsive: true }}
+                      config={{ 
+                        displayModeBar: true, 
+                        responsive: true,
+                        staticPlot: true,
+                        scrollZoom: false,
+                        doubleClick: false,
+                        showTips: false,
+                        editable: false,
+                        modeBarButtonsToRemove: ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+                      }}
                       style={{ width: '100%', height: isMobile ? '300px' : '380px' }}
                     />
                   ) : (
@@ -712,7 +735,16 @@ const CTCFAnalysis: React.FC = () => {
                           size: isMobile ? 10 : 12
                         }
                       }}
-                      config={{ displayModeBar: true, responsive: true }}
+                      config={{ 
+                        displayModeBar: true, 
+                        responsive: true,
+                        staticPlot: true,
+                        scrollZoom: false,
+                        doubleClick: false,
+                        showTips: false,
+                        editable: false,
+                        modeBarButtonsToRemove: ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+                      }}
                       style={{ width: '100%', height: isMobile ? '300px' : '380px' }}
                     />
                   ) : (

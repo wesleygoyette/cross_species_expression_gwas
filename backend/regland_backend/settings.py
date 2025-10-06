@@ -34,7 +34,7 @@ if not SECRET_KEY:
     else:
         raise ValueError("SECRET_KEY environment variable must be set in production")
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,crossgenome.site,www.crossgenome.site,34.71.6.38').split(',')
 
 
 # Application definition
@@ -167,7 +167,7 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,https://crossgenome.site,https://www.crossgenome.site,http://crossgenome.site,http://www.crossgenome.site').split(',')
 
 CORS_ALLOW_CREDENTIALS = True
 

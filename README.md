@@ -1,6 +1,6 @@
-# Regulatory Landscapes
+# Regulatory Landscapes - CrossGenome.site
 
-This is a modern web application for exploring evolutionary conservation of gene regulatory landscapes across species. Originally developed as an R Shiny application, it has been completely rewritten using a Python/Django backend with a React/TypeScript frontend to provide better performance, scalability, and user experience.
+This is a modern web application for exploring evolutionary conservation of gene regulatory landscapes across species, available at **https://crossgenome.site**. Originally developed as an R Shiny application, it has been completely rewritten using a Python/Django backend with a React/TypeScript frontend to provide better performance, scalability, and user experience.
 
 ## Features
 
@@ -225,7 +225,30 @@ The deployment pipeline includes a simple but effective rollback mechanism:
 - Nginx-served static assets
 - Production build optimization
 - Reverse proxy configuration
-- SSL termination ready
+- SSL/TLS encryption with Let's Encrypt certificates
+
+### SSL/TLS Security
+
+**Production SSL Configuration**
+- **Let's Encrypt certificates** for `crossgenome.site` and `www.crossgenome.site`
+- **Automatic HTTPS redirect** from HTTP (port 80) to HTTPS (port 443)
+- **WWW to non-WWW redirect** for canonical URL consistency
+- **TLS 1.2/1.3** support with strong cipher suites
+- **HSTS (HTTP Strict Transport Security)** with 1-year max-age
+- **SSL stapling** for improved performance and security
+
+**Certificate Management**
+- Certificates automatically renewed via certbot
+- Certificate files mounted from `/etc/letsencrypt/live/crossgenome.site/`
+- Renewal script provided: `./renew-ssl.sh`
+- Expiration monitoring (certificates expire every 90 days)
+
+**Security Headers**
+- `X-Frame-Options: SAMEORIGIN` - Prevents clickjacking
+- `X-XSS-Protection: 1; mode=block` - XSS protection
+- `X-Content-Type-Options: nosniff` - MIME type sniffing protection
+- `Strict-Transport-Security` - Forces HTTPS connections
+- `Referrer-Policy: no-referrer-when-downgrade` - Privacy protection
 
 ### Environment Configuration
 

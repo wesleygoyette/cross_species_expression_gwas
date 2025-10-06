@@ -126,19 +126,31 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
+    - name: Backup current deployment
+      run: |
+        # Tag current images as backup if they exist
+        if docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest >/dev/null 2>&1; then
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:backup
+        fi
+        if docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest >/dev/null 2>&1; then
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:backup
+        fi
+        
+        # Backup current environment file if it exists
+        if [ -f .env ]; then
+          cp .env .env.backup
+        fi
+    
     - name: Pre-deployment cleanup
       run: |
-        # Stop and remove existing containers
+        # Stop existing containers but don't remove images yet
         docker compose down --remove-orphans || true
         
-        # Clean up dangling and unused images
+        # Clean up dangling images only
         docker image prune -f
         
         # Clean up unused containers
         docker container prune -f
-        
-        # Clean up build cache to prevent accumulation
-        docker builder prune -f --all
     
     - name: Pull latest images
       run: |
@@ -165,17 +177,73 @@ jobs:
         docker compose -f docker-compose.prod.yml up -d
     
     - name: Wait for services to be healthy
+      id: health_check
       run: |
-        timeout 300 bash -c 'until docker compose -f docker-compose.prod.yml ps | grep -q "healthy"; do sleep 5; done'
+        echo "Waiting for services to become healthy..."
+        if timeout 300 bash -c 'until docker compose -f docker-compose.prod.yml ps | grep -q "healthy"; do sleep 5; done'; then
+          echo "deployment_status=success" >> $GITHUB_OUTPUT
+          echo "✅ Deployment successful - all services are healthy"
+        else
+          echo "deployment_status=failed" >> $GITHUB_OUTPUT
+          echo "❌ Deployment failed - services did not become healthy within 5 minutes"
+          exit 1
+        fi
+    
+    - name: Automatic Rollback
+      if: failure() && steps.health_check.outputs.deployment_status == 'failed'
+      run: |
+        echo "🔄 Starting automatic rollback due to failed health checks..."
+        
+        # Stop failed deployment
+        docker compose down --remove-orphans || true
+        
+        # Check if backup images exist
+        if docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:backup >/dev/null 2>&1 && 
+           docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:backup >/dev/null 2>&1; then
+          
+          echo "📦 Restoring previous working deployment..."
+          
+          # Restore backup environment if it exists
+          if [ -f .env.backup ]; then
+            cp .env.backup .env
+          fi
+          
+          # Deploy with backup images
+          export BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:backup
+          export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:backup
+          docker compose -f docker-compose.prod.yml up -d
+          
+          # Wait for rollback to be healthy
+          if timeout 180 bash -c 'until docker compose -f docker-compose.prod.yml ps | grep -q "healthy"; do sleep 5; done'; then
+            echo "✅ Rollback successful - previous version restored and healthy"
+          else
+            echo "❌ Rollback failed - manual intervention required"
+            exit 1
+          fi
+        else
+          echo "⚠️ No backup images available for rollback - manual intervention required"
+          echo "This appears to be the first deployment or backup images were not preserved"
+          exit 1
+        fi
     
     - name: Post-deployment cleanup
+      if: success()
       run: |
+        echo "🧹 Cleaning up after successful deployment..."
+        
+        # Remove backup images since deployment was successful
+        docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:backup || true
+        docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:backup || true
+        
+        # Remove backup environment file
+        rm -f .env.backup || true
+        
         # Remove all dangling images (untagged)
         docker image prune -f
         
-        # Remove old/unused images but keep currently running ones
-        docker images | grep '${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}' | grep -v latest | awk '{print $3}' | xargs -r docker rmi || true
-        docker images | grep '${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}' | grep -v latest | awk '{print $3}' | xargs -r docker rmi || true
+        # Clean up old images but preserve latest and backup tags
+        docker images | grep '${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}' | grep -v -E 'latest|backup' | awk '{print $3}' | xargs -r docker rmi || true
+        docker images | grep '${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}' | grep -v -E 'latest|backup' | awk '{print $3}' | xargs -r docker rmi || true
         
         # Clean up any remaining unused Docker resources
         docker system prune -f --volumes

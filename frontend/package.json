@@ -58,6 +58,7 @@
         ]
     },
     "devDependencies": {
+        "@types/bonjour": "^3.5.13",
         "@types/react-plotly.js": "^2.6.3"
     }
 }

@@ -1,4 +1,4 @@
-# Frontend Dockerfile - Multi-stage build
+# Frontend Dockerfile - Multi-stage build for Vite
 FROM node:20-alpine AS build
 
 # Set working directory
@@ -6,7 +6,6 @@ WORKDIR /app
 
 # Set memory optimization environment variables
 ENV NODE_OPTIONS="--max_old_space_size=4096"
-ENV GENERATE_SOURCEMAP=false
 ENV CI=false
 
 # Install dependencies first (better caching)
@@ -16,7 +15,7 @@ RUN npm ci --only=production=false --silent
 # Copy source code
 COPY . .
 
-# Build the application with memory optimizations
+# Build the application with Vite
 RUN npm run build:docker
 
 # Production stage

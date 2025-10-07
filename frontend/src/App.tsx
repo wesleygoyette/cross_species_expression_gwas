@@ -5,6 +5,7 @@ import { GeneExplorer } from './components/GeneExplorer';
 import { GWASPortal } from './components/GWASPortal';
 import { RegulatoryAnalyzer } from './components/RegulatoryAnalyzer';
 import { SpeciesTree } from './components/SpeciesTree';
+import { APIDocumentation } from './components/APIDocumentation';
 import { Footer } from './components/Footer';
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
         <GWASPortal />
         <RegulatoryAnalyzer />
         <SpeciesTree />
+        <APIDocumentation />
       </main>
       <Footer />
     </div>

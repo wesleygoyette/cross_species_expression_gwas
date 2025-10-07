@@ -15,11 +15,11 @@ class Species(models.Model):
 
 class Gene(models.Model):
     gene_id = models.AutoField(primary_key=True)
-    symbol = models.CharField(max_length=200)
-    species_id = models.CharField(max_length=50)
-    chrom = models.CharField(max_length=50)
-    start = models.IntegerField()
-    end = models.IntegerField()
+    symbol = models.CharField(max_length=200, db_index=True)
+    species_id = models.CharField(max_length=50, db_index=True)
+    chrom = models.CharField(max_length=50, db_index=True)
+    start = models.IntegerField(db_index=True)
+    end = models.IntegerField(db_index=True)
     
     class Meta:
         db_table = 'genes'
@@ -27,11 +27,11 @@ class Gene(models.Model):
 
 class Enhancer(models.Model):
     enh_id = models.AutoField(primary_key=True)
-    species_id = models.CharField(max_length=50)
-    chrom = models.CharField(max_length=50)
-    start = models.IntegerField()
-    end = models.IntegerField()
-    tissue = models.CharField(max_length=100, null=True, blank=True)
+    species_id = models.CharField(max_length=50, db_index=True)
+    chrom = models.CharField(max_length=50, db_index=True)
+    start = models.IntegerField(db_index=True)
+    end = models.IntegerField(db_index=True)
+    tissue = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     score = models.FloatField(null=True, blank=True)
     source = models.CharField(max_length=200, null=True, blank=True)
     
@@ -40,8 +40,8 @@ class Enhancer(models.Model):
 
 
 class EnhancerClass(models.Model):
-    enh_id = models.IntegerField(primary_key=True)
-    class_name = models.CharField(max_length=50, db_column='class')
+    enh_id = models.IntegerField(primary_key=True, db_index=True)
+    class_name = models.CharField(max_length=50, db_column='class', db_index=True)
     
     class Meta:
         db_table = 'enhancer_class'
@@ -49,21 +49,21 @@ class EnhancerClass(models.Model):
 
 class GWASSnp(models.Model):
     snp_id = models.AutoField(primary_key=True)
-    chrom = models.CharField(max_length=50)
-    pos = models.IntegerField()
-    rsid = models.CharField(max_length=50, unique=True, null=True, blank=True)
-    trait = models.CharField(max_length=500, null=True, blank=True)
+    chrom = models.CharField(max_length=50, db_index=True)
+    pos = models.IntegerField(db_index=True)
+    rsid = models.CharField(max_length=50, unique=True, null=True, blank=True, db_index=True)
+    trait = models.CharField(max_length=500, null=True, blank=True, db_index=True)
     pval = models.FloatField(null=True, blank=True)
     source = models.CharField(max_length=200, null=True, blank=True)
-    category = models.CharField(max_length=100, null=True, blank=True)
+    category = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     
     class Meta:
         db_table = 'gwas_snps'
 
 
 class SnpToEnhancer(models.Model):
-    snp_id = models.IntegerField()
-    enh_id = models.IntegerField()
+    snp_id = models.IntegerField(db_index=True)
+    enh_id = models.IntegerField(db_index=True)
     overlap_bp = models.IntegerField(null=True, blank=True)
     
     class Meta:
@@ -72,8 +72,8 @@ class SnpToEnhancer(models.Model):
 
 
 class GeneToEnhancer(models.Model):
-    gene_id = models.IntegerField()
-    enh_id = models.IntegerField()
+    gene_id = models.IntegerField(db_index=True)
+    enh_id = models.IntegerField(db_index=True)
     method = models.CharField(max_length=100, null=True, blank=True)
     distance_bp = models.IntegerField(null=True, blank=True)
     
@@ -84,13 +84,13 @@ class GeneToEnhancer(models.Model):
 
 class CTCFSite(models.Model):
     site_id = models.AutoField(primary_key=True)
-    species_id = models.CharField(max_length=50)
-    chrom = models.CharField(max_length=50)
-    start = models.IntegerField()
-    end = models.IntegerField()
+    species_id = models.CharField(max_length=50, db_index=True)
+    chrom = models.CharField(max_length=50, db_index=True)
+    start = models.IntegerField(db_index=True)
+    end = models.IntegerField(db_index=True)
     score = models.FloatField(null=True, blank=True)
     motif_p = models.FloatField(null=True, blank=True)
-    cons_class = models.CharField(max_length=50, null=True, blank=True)
+    cons_class = models.CharField(max_length=50, null=True, blank=True, db_index=True)
     
     class Meta:
         db_table = 'ctcf_sites'
@@ -98,10 +98,10 @@ class CTCFSite(models.Model):
 
 class TADDomain(models.Model):
     tad_id = models.AutoField(primary_key=True)
-    species_id = models.CharField(max_length=50)
-    chrom = models.CharField(max_length=50)
-    start = models.IntegerField()
-    end = models.IntegerField()
+    species_id = models.CharField(max_length=50, db_index=True)
+    chrom = models.CharField(max_length=50, db_index=True)
+    start = models.IntegerField(db_index=True)
+    end = models.IntegerField(db_index=True)
     source = models.CharField(max_length=200, null=True, blank=True)
     
     class Meta:

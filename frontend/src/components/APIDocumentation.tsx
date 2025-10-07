@@ -534,7 +534,7 @@ export function APIDocumentation() {
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
             Developer Resources
           </Badge>
-          <h2 className="mb-8 bg-gradient-to-r from-primary via-[var(--genomic-green)] to-primary bg-clip-text text-transparent text-4xl">
+          <h2 className="mb-4 bg-gradient-to-r from-primary via-[var(--genomic-green)] to-primary bg-clip-text text-transparent text-4xl">
             API Documentation
           </h2>
           <p className="text-muted-foreground max-w-3xl mx-auto">

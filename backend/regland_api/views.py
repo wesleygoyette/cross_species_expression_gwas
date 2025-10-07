@@ -32,7 +32,11 @@ from .utils import (
     get_gwas_snps_in_region_optimized,
     get_ctcf_sites_in_region_optimized,
     create_genome_tracks_plot_optimized,
-    create_conservation_heatmap_optimized
+    create_conservation_heatmap_optimized,
+    # Enhanced database functions
+    get_enhancers_in_region_enhanced,
+    get_gwas_snps_with_enhanced_mapping,
+    get_tissue_coverage_stats
 )
 
 
@@ -68,11 +72,21 @@ def combined_gene_data(request):
             show_gene, show_snps, log_expression
         )
         
+        # Add quality indicators using enhanced views
+        with connection.cursor() as cursor:
+            tissue_stats = get_tissue_coverage_stats(cursor, species_id)
+            current_tissue_quality = next((t for t in tissue_stats if t['tissue'] == tissue), None)
+        
         return Response({
             'regionData': region_results['region_data'],
             'matrixData': region_results['matrix_data'],
             'tracksData': region_results['tracks_data'],
-            'exprData': region_results['expr_data']
+            'exprData': region_results['expr_data'],
+            'qualityInfo': {
+                'database_version': 'enhanced_v2',
+                'tissue_quality': current_tissue_quality,
+                'quality_warning': current_tissue_quality['coverage_level'] in ['critical', 'low'] if current_tissue_quality else False
+            }
         })
         
     except Exception as e:
@@ -121,10 +135,10 @@ def gene_region_data(request):
         if not gene_data:
             return Response({'error': 'Gene not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Use optimized single-connection approach
+        # Use enhanced single-connection approach with quality indicators
         with connection.cursor() as cursor:
-            # Get enhancers in region (limited for performance)
-            enhancers = get_enhancers_in_region_optimized(
+            # Get enhancers in region using enhanced views
+            enhancers = get_enhancers_in_region_enhanced(
                 cursor, species_id, gene_data['chrom'], 
                 gene_data['start'], gene_data['end'],
                 tissue, enhancer_classes
@@ -440,3 +454,131 @@ def health_check(request):
             'message': 'Database connection failed',
             'error': str(e)
         }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+# =============================================================================
+# ENHANCED API ENDPOINTS FOR DATABASE QUALITY INTEGRATION
+# =============================================================================
+
+@api_view(['GET'])
+def data_quality_summary(request):
+    """
+    API endpoint providing data quality overview for the enhanced database
+    """
+    species_id = request.GET.get('species', 'human_hg38')
+    
+    try:
+        with connection.cursor() as cursor:
+            # Get comprehensive quality stats
+            cursor.execute("""
+                SELECT 
+                    'enhancers_total' as metric,
+                    COUNT(*) as value
+                FROM enhancers_all WHERE species_id = %s
+                UNION ALL
+                SELECT 
+                    'enhancers_with_scores',
+                    COUNT(*) 
+                FROM enhancers_all WHERE species_id = %s AND score IS NOT NULL
+                UNION ALL
+                SELECT 
+                    'enhancers_high_confidence',
+                    COUNT(*) 
+                FROM enhancers_hiconf WHERE species_id = %s
+                UNION ALL
+                SELECT 
+                    'gene_enhancer_mappings',
+                    COUNT(*)
+                FROM gene_to_enhancer_annot gea 
+                JOIN genes g ON gea.gene_id = g.gene_id 
+                WHERE g.species_id = %s
+            """, [species_id, species_id, species_id, species_id])
+            
+            quality_stats = {}
+            for row in cursor.fetchall():
+                quality_stats[row[0]] = row[1]
+                
+            # Get tissue coverage using our new function
+            from .utils import get_tissue_coverage_stats
+            tissue_stats = get_tissue_coverage_stats(cursor, species_id)
+            
+        return Response({
+            'species': species_id,
+            'quality_stats': quality_stats,
+            'tissue_coverage': tissue_stats,
+            'recommendations': generate_quality_recommendations(quality_stats, tissue_stats),
+            'database_version': 'enhanced_v2'  # Version indicator
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+def generate_quality_recommendations(quality_stats, tissue_stats):
+    """Generate user-friendly recommendations based on data quality"""
+    recommendations = []
+    
+    # Check score coverage
+    total_enhancers = quality_stats.get('enhancers_total', 0)
+    if total_enhancers > 0:
+        score_coverage = quality_stats.get('enhancers_with_scores', 0) / total_enhancers
+        if score_coverage < 0.7:
+            recommendations.append({
+                'type': 'scores',
+                'message': f"Only {score_coverage:.1%} of enhancers have scores. Use high-confidence views for scored analysis.",
+                'action': 'Filter to high-confidence enhancers',
+                'severity': 'info'
+            })
+    
+    # Check tissue coverage
+    low_coverage_tissues = [t for t in tissue_stats if t['coverage_level'] in ['critical', 'low']]
+    if low_coverage_tissues:
+        tissue_names = [t['tissue'] for t in low_coverage_tissues]
+        recommendations.append({
+            'type': 'tissues',
+            'message': f"Limited data for {', '.join(tissue_names)}. Consider alternative tissues.",
+            'action': 'Use Brain or Heart for better coverage',
+            'severity': 'warning'
+        })
+    
+    # Special warning for human liver
+    human_liver_issue = next((t for t in tissue_stats if t['tissue'] == 'Liver' and t['enhancer_count'] < 50), None)
+    if human_liver_issue:
+        recommendations.append({
+            'type': 'critical_data_gap',
+            'message': 'Human liver enhancer data is extremely limited. Results may not be representative.',
+            'action': 'Consider using mouse liver data or alternative tissues',
+            'severity': 'error'
+        })
+    
+    return recommendations
+
+@api_view(['GET'])  
+def enhanced_tissue_info(request):
+    """
+    API endpoint providing enhanced tissue information with coverage stats
+    """
+    species_id = request.GET.get('species', 'human_hg38')
+    
+    try:
+        with connection.cursor() as cursor:
+            from .utils import get_tissue_coverage_stats
+            tissue_stats = get_tissue_coverage_stats(cursor, species_id)
+            
+            # Add usage recommendations
+            for tissue in tissue_stats:
+                if tissue['coverage_level'] == 'good':
+                    tissue['recommendation'] = 'Recommended for analysis'
+                elif tissue['coverage_level'] == 'medium':
+                    tissue['recommendation'] = 'Suitable for analysis with caution'
+                elif tissue['coverage_level'] == 'low':
+                    tissue['recommendation'] = 'Limited data - use with caution'
+                else:  # critical
+                    tissue['recommendation'] = 'Not recommended - insufficient data'
+            
+        return Response({
+            'species': species_id,
+            'tissues': tissue_stats,
+            'total_tissues': len(tissue_stats)
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

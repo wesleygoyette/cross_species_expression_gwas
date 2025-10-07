@@ -1,149 +1,44 @@
-import React, { useState } from 'react';
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  Box,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
-import { Menu as MenuIcon, Close as CloseIcon } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Search, Menu } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 
-const Navigation: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navigationItems = [
-    { label: 'Home', path: '/' },
-    { label: 'Explore Genes', path: '/explore-genes' },
-    { label: 'Conservation Map', path: '/conservation-map' },
-    { label: 'CTCF & 3D', path: '/ctcf-3d' },
-    { label: 'Expression', path: '/expression' },
-    { label: 'GWAS / Heritability', path: '/gwas-heritability' },
-    { label: 'Downloads', path: '/downloads' },
-    { label: 'About', path: '/about' },
-  ];
-
-  const handleMobileMenuToggle = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
-  const handleNavigation = (path: string) => {
-    navigate(path);
-    setMobileMenuOpen(false);
-  };
-
+export function Navigation() {
   return (
-    <>
-      <AppBar position="static" sx={{ mb: 3 }}>
-        <Toolbar>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              flexGrow: 1,
-              fontWeight: 700,
-              fontSize: { xs: '1.1rem', sm: '1.25rem' },
-              cursor: 'pointer',
-            }}
-            onClick={() => navigate('/')}
-          >
-            Regulatory Landscapes
-          </Typography>
-          
-          {isMobile ? (
-            <IconButton
-              color="inherit"
-              edge="end"
-              onClick={handleMobileMenuToggle}
-              sx={{ ml: 1 }}
-            >
-              <MenuIcon />
-            </IconButton>
-          ) : (
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.path}
-                  color="inherit"
-                  onClick={() => navigate(item.path)}
-                  sx={{
-                    backgroundColor:
-                      location.pathname === item.path
-                        ? 'rgba(255, 255, 255, 0.2)'
-                        : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    },
-                    borderRadius: 1,
-                    px: 2,
-                    py: 1,
-                    fontSize: '0.9rem',
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </Box>
-          )}
-        </Toolbar>
-      </AppBar>
-
-      <Drawer
-        anchor="right"
-        open={mobileMenuOpen}
-        onClose={handleMobileMenuToggle}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            width: 280,
-            backgroundColor: theme.palette.background.paper,
-          },
-        }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
-          <IconButton onClick={handleMobileMenuToggle}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <List>
-          {navigationItems.map((item) => (
-            <ListItem key={item.path} disablePadding>
-              <ListItemButton
-                onClick={() => handleNavigation(item.path)}
-                selected={location.pathname === item.path}
-                sx={{
-                  '&.Mui-selected': {
-                    backgroundColor: theme.palette.primary.main + '20',
-                  },
-                }}
-              >
-                <ListItemText 
-                  primary={item.label}
-                  sx={{
-                    '& .MuiTypography-root': {
-                      fontWeight: location.pathname === item.path ? 600 : 400,
-                    },
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
-    </>
+    <nav className="border-b border-border bg-card/50 backdrop-blur-lg sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-[#00d4ff] to-[#00ff88] rounded" />
+              <div>
+                <h1 className="text-[#00d4ff] tracking-tight">RegLand</h1>
+                <p className="text-xs text-muted-foreground">Cross-Species Regulatory Genomics</p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center gap-6">
+              <a href="#home" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">Home</a>
+              <a href="#gene-explorer" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">Gene Explorer</a>
+              <a href="#gwas" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">GWAS Portal</a>
+              <a href="#regulatory" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">Regulatory Analyzer</a>
+              <a href="#api" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">API</a>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden lg:flex items-center gap-2 bg-input-background rounded-lg px-3 py-1.5">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <input 
+                type="text" 
+                placeholder="Search genes, SNPs, traits..."
+                className="bg-transparent border-none outline-none text-sm w-64 placeholder:text-muted-foreground"
+              />
+            </div>
+            <Button variant="outline" size="sm">Sign In</Button>
+            <Button className="md:hidden" variant="ghost" size="icon">
+              <Menu className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </nav>
   );
-};
-
-export default Navigation;
+}

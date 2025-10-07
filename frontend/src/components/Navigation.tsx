@@ -32,6 +32,7 @@ export function Navigation() {
                 className="bg-transparent border-none outline-none text-sm w-64 placeholder:text-muted-foreground"
               />
             </div>
+            <Button variant="outline" size="sm">Sign In</Button>
             <Button className="md:hidden" variant="ghost" size="icon">
               <Menu className="w-5 h-5" />
             </Button>

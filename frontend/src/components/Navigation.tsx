@@ -16,7 +16,7 @@ export function Navigation() {
               </div>
             </div>
             <div className="hidden md:flex items-center gap-6">
-              <a href="#home" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">Home</a>
+              <a href="/" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">Home</a>
               <a href="#gene-explorer" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">Gene Explorer</a>
               <a href="#gwas" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">GWAS Portal</a>
               <a href="#regulatory" className="text-sm text-foreground/80 hover:text-[#00d4ff] transition-colors">Regulatory Analyzer</a>

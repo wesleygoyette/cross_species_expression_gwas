@@ -25,4 +25,8 @@ urlpatterns = [
     
     # Health check
     path('health/', views.health_check, name='health_check'),
+    
+    # Enhanced database quality endpoints
+    path('quality/summary/', views.data_quality_summary, name='data_quality_summary'),
+    path('quality/tissues/', views.enhanced_tissue_info, name='enhanced_tissue_info'),
 ]

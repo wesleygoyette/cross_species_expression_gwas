@@ -795,10 +795,10 @@ export function GeneExplorer() {
                             <Card className="p-6 bg-card border-border w-full min-w-0" style={{ wordBreak: 'break-word', overflowX: 'auto' }}>
                                 <div className="w-full">
                                     {/* Custom Tab Navigation */}
-                                    <div className="mb-6 flex gap-3 pb-1">
+                                    <div className="mb-6 flex flex-wrap gap-2 sm:gap-3 pb-1">
                                         <button
                                             onClick={() => setSelectedTab('tracks')}
-                                            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 ${selectedTab === 'tracks'
+                                            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap ${selectedTab === 'tracks'
                                                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
                                                 : 'bg-secondary/50 text-foreground/70 hover:bg-secondary/80 hover:text-foreground hover:scale-102 border border-border/50'
                                                 }`}
@@ -807,7 +807,7 @@ export function GeneExplorer() {
                                         </button>
                                         <button
                                             onClick={() => setSelectedTab('conservation')}
-                                            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 ${selectedTab === 'conservation'
+                                            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap ${selectedTab === 'conservation'
                                                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
                                                 : 'bg-secondary/50 text-foreground/70 hover:bg-secondary/80 hover:text-foreground hover:scale-102 border border-border/50'
                                                 }`}
@@ -816,7 +816,7 @@ export function GeneExplorer() {
                                         </button>
                                         <button
                                             onClick={() => setSelectedTab('expression')}
-                                            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 ${selectedTab === 'expression'
+                                            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap ${selectedTab === 'expression'
                                                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
                                                 : 'bg-secondary/50 text-foreground/70 hover:bg-secondary/80 hover:text-foreground hover:scale-102 border border-border/50'
                                                 }`}
@@ -825,7 +825,7 @@ export function GeneExplorer() {
                                         </button>
                                         <button
                                             onClick={() => setSelectedTab('gwas')}
-                                            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 flex items-center gap-2 ${selectedTab === 'gwas'
+                                            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${selectedTab === 'gwas'
                                                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
                                                 : 'bg-secondary/50 text-foreground/70 hover:bg-secondary/80 hover:text-foreground hover:scale-102 border border-border/50'
                                                 }`}

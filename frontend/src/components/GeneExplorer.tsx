@@ -1135,7 +1135,8 @@ export function GeneExplorer() {
                                             </div>
 
                                             {/* Data Quality Warnings */}
-                                            {geneInfo?.dataQuality.score_availability !== 'high' && displayData && (
+                                            {geneInfo?.dataQuality.score_availability !== 'high' && displayData && 
+                                             ((displayData.enhancersWithScore || 0) / displayData.enhancers) < 1 && (
                                                 <Alert className="bg-[var(--data-orange)]/10 border-[var(--data-orange)]/20">
                                                     <AlertCircle className="h-4 w-4 text-[var(--data-orange)]" />
                                                     <AlertDescription className="text-sm text-[var(--data-orange)]">

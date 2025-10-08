@@ -11,6 +11,8 @@ urlpatterns = [
     # Data endpoints
     path('species/', views.species_list, name='species_list'),
     path('gwas/categories/', views.gwas_categories, name='gwas_categories'),
+    path('gwas/traits/', views.gwas_traits, name='gwas_traits'),
+    path('gwas/trait-snps/', views.trait_snps, name='trait_snps'),
     
     # Analysis endpoints
     path('analysis/ctcf/', views.ctcf_analysis, name='ctcf_analysis'),

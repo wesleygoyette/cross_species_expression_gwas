@@ -11,10 +11,6 @@ from plotly.utils import PlotlyJSONEncoder
 import hashlib
 
 
-# Global variable to cache expression data
-_expression_cache = None
-
-
 def get_combined_region_data(gene_data, species_id, tissue, enhancer_classes, 
                            nbins, normalize_rows, mark_tss, stack_tracks, 
                            show_gene, show_snps, log_expression):
@@ -301,29 +297,53 @@ def create_genome_tracks_plot_optimized(gene_data, enhancers, snps, stack_tracks
 
 
 def get_expression_data_cached(gene_symbol, log_scale=False):
-    """Get expression data with caching for performance"""
-    global _expression_cache
+    """Get expression data from database with caching for performance"""
+    # Create cache key
+    cache_key = f"expr_{gene_symbol.upper()}_{log_scale}"
     
-    # Initialize cache if needed
-    if _expression_cache is None:
-        _expression_cache = load_expression_cache()
+    # Check cache first
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return cached_data
     
-    # Get data from cache
+    # Query database for expression data
+    # PERFORMANCE FIX: Use direct comparison instead of UPPER() to utilize index
+    # Symbols are already stored in uppercase in the database
     gene_upper = gene_symbol.upper()
-    all_expr_data = _expression_cache.get(gene_upper, [])
     
-    # Filter for only Brain, Heart, Liver and aggregate
+    # Filter tissues at database level for better performance
     tissues_of_interest = ['Brain', 'Heart', 'Liver']
-    expr_data = []
     
-    for target_tissue in tissues_of_interest:
-        # Find matching tissues and calculate average
-        matching_values = []
-        for item in all_expr_data:
-            if target_tissue.lower() in item['tissue'].lower():
-                matching_values.append(item['tpm'])
+    with connection.cursor() as cursor:
+        # Use parameterized query with tissue filtering
+        # This is much faster than fetching all tissues and filtering in Python
+        cursor.execute("""
+            SELECT tissue, tpm
+            FROM gene_expression
+            WHERE symbol = %s
+            AND (tissue LIKE %s OR tissue LIKE %s OR tissue LIKE %s)
+        """, [gene_upper, '%Brain%', '%Heart%', '%Liver%'])
         
-        # Calculate mean TPM value
+        rows = cursor.fetchall()
+    
+    # Group by tissue and calculate averages
+    tissue_groups = {'Brain': [], 'Heart': [], 'Liver': []}
+    
+    for row in rows:
+        tissue_name = row[0]
+        tpm_value = float(row[1])
+        
+        # Categorize into one of our three tissue groups
+        for target_tissue in tissues_of_interest:
+            if target_tissue.lower() in tissue_name.lower():
+                tissue_groups[target_tissue].append(tpm_value)
+                break
+    
+    # Calculate mean values for each tissue
+    expr_data = []
+    for target_tissue in tissues_of_interest:
+        matching_values = tissue_groups[target_tissue]
+        
         if matching_values:
             mean_tpm = sum(matching_values) / len(matching_values)
         else:
@@ -342,78 +362,15 @@ def get_expression_data_cached(gene_symbol, log_scale=False):
     # Create plot
     plot_data = create_expression_plot(expr_data, gene_symbol, log_scale)
     
-    return {
+    result = {
         'expression_data': expr_data,
         'plot_data': plot_data
     }
-
-
-def load_expression_cache():
-    """Load and cache expression data for fast access"""
-    cache_key = 'expression_data_cache'
-    cached_data = cache.get(cache_key)
-    
-    if cached_data:
-        return cached_data
-    
-    # Load expression data
-    expression_file = settings.BASE_DIR / 'data' / 'expression_tpm.tsv'
-    expression_cache = {}
-    
-    try:
-        # Load data efficiently
-        df = pd.read_csv(expression_file, sep='\t', low_memory=False)
-        
-        # Process based on format
-        if 'tissue' in df.columns and 'tpm' in df.columns:
-            # Long format - already correct
-            for _, row in df.iterrows():
-                gene = row['symbol'].upper()
-                if gene not in expression_cache:
-                    expression_cache[gene] = []
-                expression_cache[gene].append({
-                    'symbol': row['symbol'],
-                    'tissue': row['tissue'],
-                    'tpm': float(row['tpm'])
-                })
-        else:
-            # Wide format - convert to long format with all tissue data
-            symbol_col = None
-            for col in ['symbol', 'gene', 'Gene', 'SYMBOL']:
-                if col in df.columns:
-                    symbol_col = col
-                    break
-            
-            if symbol_col:
-                # Process each gene
-                for _, row in df.iterrows():
-                    gene = str(row[symbol_col]).upper()
-                    if gene not in expression_cache:
-                        expression_cache[gene] = []
-                    
-                    # Add all tissue data
-                    for col in df.columns:
-                        if col == symbol_col:
-                            continue
-                        try:
-                            value = float(row[col])
-                            if not pd.isna(value):
-                                expression_cache[gene].append({
-                                    'symbol': row[symbol_col],
-                                    'tissue': col,
-                                    'tpm': value
-                                })
-                        except (ValueError, TypeError):
-                            continue
-    
-    except Exception as e:
-        print(f"Error loading expression data: {e}")
-        # Return empty cache on error
-        expression_cache = {}
     
     # Cache for 1 hour
-    cache.set(cache_key, expression_cache, 3600)
-    return expression_cache
+    cache.set(cache_key, result, 3600)
+    
+    return result
 
 
 def get_database_path():

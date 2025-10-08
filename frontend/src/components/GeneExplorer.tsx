@@ -195,7 +195,7 @@ export function GeneExplorer() {
                 // Show error only if ALL species failed
                 if (humanData.status === 'rejected' && mouseDataResult.status === 'rejected' && pigDataResult.status === 'rejected') {
                     setShowError(true);
-                    setErrorMessage('Failed to load gene data for all species');
+                    setErrorMessage('Failed to load gene data');
                 }
             } catch (error) {
                 console.error('Error fetching gene data:', error);
@@ -632,15 +632,6 @@ export function GeneExplorer() {
                                         </div>
                                     )}
                                 </div>
-
-                                {showError && (
-                                    <Alert className="bg-destructive/10 border-destructive/20">
-                                        <AlertCircle className="h-4 w-4 text-destructive" />
-                                        <AlertDescription className="text-sm text-destructive">
-                                            Gene not found in database. Try example genes below.
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
 
                                 <div className="space-y-2">
                                     <p className="text-xs text-muted-foreground">Example genes:</p>

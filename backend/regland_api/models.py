@@ -106,3 +106,18 @@ class TADDomain(models.Model):
     
     class Meta:
         db_table = 'tad_domains'
+
+
+class GeneExpression(models.Model):
+    """Gene expression data (TPM values) across tissues"""
+    expression_id = models.AutoField(primary_key=True)
+    symbol = models.CharField(max_length=200, db_index=True)
+    tissue = models.CharField(max_length=200, db_index=True)
+    tpm = models.FloatField()
+    
+    class Meta:
+        db_table = 'gene_expression'
+        unique_together = ('symbol', 'tissue')
+        indexes = [
+            models.Index(fields=['symbol', 'tissue']),
+        ]

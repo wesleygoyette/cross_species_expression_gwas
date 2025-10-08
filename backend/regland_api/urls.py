@@ -7,6 +7,7 @@ urlpatterns = [
     path('genes/region/', views.gene_region_data, name='gene_region_data'),
     path('genes/combined-data/', views.combined_gene_data, name='combined_gene_data'),
     path('genes/presets/', views.gene_presets, name='gene_presets'),
+    path('genes/data-quality/', views.gene_data_quality, name='gene_data_quality'),
 
     # Data endpoints
     path('species/', views.species_list, name='species_list'),

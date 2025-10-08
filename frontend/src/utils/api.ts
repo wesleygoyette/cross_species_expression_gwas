@@ -93,6 +93,13 @@ export interface SpeciesListResponse {
     species: Species[];
 }
 
+export interface DataQuality {
+    tissue_availability: 'high' | 'low' | 'none';
+    score_availability: 'high' | 'low' | 'none';
+    conservation_percent: number;
+    available_species: string[];
+}
+
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
@@ -276,6 +283,21 @@ export function getSpeciesDisplayName(speciesId: string): string {
         'chicken_galGal6': 'Chicken',
     };
     return mapping[speciesId] || speciesId;
+}
+
+/**
+ * Get comprehensive data quality metrics for a gene
+ * This endpoint provides stats across all tissues without filtering
+ * Always uses human genome for quality assessment
+ */
+export async function getGeneDataQuality(
+    gene: string
+): Promise<DataQuality> {
+    const url = new URL(`${API_BASE_URL}${API_PREFIX}/genes/data-quality/`);
+    url.searchParams.append('gene', gene.toUpperCase());
+
+    const response = await fetch(url.toString());
+    return handleResponse<DataQuality>(response);
 }
 
 /**

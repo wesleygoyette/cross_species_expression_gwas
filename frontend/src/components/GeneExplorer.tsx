@@ -22,28 +22,13 @@ import {
     formatGenomicPosition,
     searchGenes,
     getGeneExpression,
+    getGeneDataQuality,
+    getSpeciesDisplayName,
     type GeneRegionResponse,
     type Enhancer,
     type ExpressionData,
+    type DataQuality,
 } from '../utils/api';
-
-interface GeneData {
-    fullName: string;
-    chromosome: string;
-    position: string;
-    enhancers: number;
-    enhancersWithScore?: number;
-    enhancersWithTissue?: number;
-    conservation: number;
-    species: string[];
-    ctcfSites?: number;
-    gwasSnps?: number;
-    dataQuality: {
-        tissueAvailability: 'high' | 'low' | 'none';
-        scoreAvailability: 'high' | 'low' | 'none';
-        ctcfAnnotation: 'complete' | 'partial' | 'missing';
-    };
-}
 
 export function GeneExplorer() {
     const [selectedGene, setSelectedGene] = useState('');
@@ -57,6 +42,7 @@ export function GeneExplorer() {
     const [apiData, setApiData] = useState<GeneRegionResponse | null>(null);
     const [mouseData, setMouseData] = useState<GeneRegionResponse | null>(null);
     const [pigData, setPigData] = useState<GeneRegionResponse | null>(null);
+    const [dataQuality, setDataQuality] = useState<DataQuality | null>(null);
     const [expressionData, setExpressionData] = useState<ExpressionData[]>([]);
     const [expressionLoading, setExpressionLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -71,78 +57,25 @@ export function GeneExplorer() {
 
     const exampleGenes = ['BDNF', 'FOXP2', 'ALB', 'PCSK9', 'TP53'];
 
-    const geneData: Record<string, GeneData> = {
-        BDNF: {
-            fullName: 'Brain-Derived Neurotrophic Factor',
-            chromosome: 'chr11',
-            position: '27,654,894-27,724,285',
-            enhancers: 48,
-            enhancersWithScore: 34,
-            enhancersWithTissue: 48,
-            conservation: 89,
-            species: ['Human', 'Mouse', 'Pig'],
-            ctcfSites: 12,
-            gwasSnps: 3,
-            dataQuality: {
-                tissueAvailability: 'high',
-                scoreAvailability: 'high',
-                ctcfAnnotation: 'missing',
-            }
-        },
-        FOXP2: {
-            fullName: 'Forkhead Box P2',
-            chromosome: 'chr7',
-            position: '114,086,327-114,693,772',
-            enhancers: 28,
-            enhancersWithScore: 8,
-            enhancersWithTissue: 15,
-            conservation: 94,
-            species: ['Human', 'Mouse', 'Pig'],
-            ctcfSites: 18,
-            gwasSnps: 1,
-            dataQuality: {
-                tissueAvailability: 'low',
-                scoreAvailability: 'low',
-                ctcfAnnotation: 'missing',
-            }
-        },
-        ALB: {
-            fullName: 'Albumin',
-            chromosome: 'chr4',
-            position: '73,404,256-73,421,412',
-            enhancers: 9,
-            enhancersWithScore: 0,
-            enhancersWithTissue: 9,
-            conservation: 76,
-            species: ['Human', 'Mouse'],
-            ctcfSites: 6,
-            gwasSnps: 5,
-            dataQuality: {
-                tissueAvailability: 'low',
-                scoreAvailability: 'none',
-                ctcfAnnotation: 'missing',
-            }
-        },
-        PCSK9: {
-            fullName: 'Proprotein Convertase Subtilisin/Kexin Type 9',
-            chromosome: 'chr1',
-            position: '55,039,475-55,064,852',
-            enhancers: 18,
-            enhancersWithScore: 12,
-            enhancersWithTissue: 18,
-            conservation: 82,
-            species: ['Human', 'Mouse'],
-            ctcfSites: 8,
-            gwasSnps: 12,
-            dataQuality: {
-                tissueAvailability: 'high',
-                scoreAvailability: 'high',
-                ctcfAnnotation: 'missing',
-            }
-        },
-    };
+    // Fetch data quality from backend API
+    useEffect(() => {
+        if (!selectedGene) {
+            setDataQuality(null);
+            return;
+        }
 
-    const currentGene = geneData[selectedGene as keyof typeof geneData] || geneData.BDNF;
+        const fetchDataQuality = async () => {
+            try {
+                const quality = await getGeneDataQuality(selectedGene);
+                setDataQuality(quality);
+            } catch (error) {
+                console.error('Error fetching data quality:', error);
+                setDataQuality(null);
+            }
+        };
+
+        fetchDataQuality();
+    }, [selectedGene]);
 
     // Fetch real data from API
     useEffect(() => {
@@ -294,13 +227,21 @@ export function GeneExplorer() {
         gwasSnps: apiData.gwas_snps.length,
     } : null;
 
+    // Use data quality from the dedicated API endpoint
+    const geneInfo = dataQuality ? {
+        fullName: selectedGene, // We don't have full names in the API, so use the symbol
+        conservation: dataQuality.conservation_percent,
+        species: dataQuality.available_species.map(id => getSpeciesDisplayName(id)),
+        dataQuality: dataQuality, // The whole object is the quality data
+    } : null;
+
     // Parse gene coordinates for zoom calculations
     const parsePosition = (position: string) => {
         const [start, end] = position.replace(/,/g, '').split('-').map(Number);
         return { start, end, length: end - start };
     };
 
-    const geneCoords = parsePosition(currentGene.position);
+    const geneCoords = displayData ? parsePosition(displayData.position) : { start: 0, end: 100000, length: 100000 };
 
     // Calculate genomic window size based on zoom level
     // Use gene length as base window, so at 1x zoom we see the full gene region nicely
@@ -699,7 +640,7 @@ export function GeneExplorer() {
                                                 </Tooltip>
                                             </TooltipProvider>
                                         </div>
-                                        <p className="text-sm text-muted-foreground">{currentGene.fullName}</p>
+                                        <p className="text-sm text-muted-foreground">{geneInfo?.fullName || selectedGene}</p>
                                     </div>
 
                                     <div className="space-y-2 text-sm">
@@ -739,18 +680,7 @@ export function GeneExplorer() {
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <span className="text-muted-foreground">Conservation:</span>
-                                            <span className="text-[var(--genomic-green)]">{currentGene.conservation}%</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-3 border-t border-border">
-                                        <p className="text-xs text-muted-foreground mb-2">Available in:</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {currentGene.species.map((species) => (
-                                                <Badge key={species} variant="outline" className="text-xs">
-                                                    {species}
-                                                </Badge>
-                                            ))}
+                                            <span className="text-[var(--genomic-green)]">{geneInfo?.conservation || 0}%</span>
                                         </div>
                                     </div>
 
@@ -760,30 +690,14 @@ export function GeneExplorer() {
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center text-xs">
                                                 <span className="text-muted-foreground">Tissue Annotation:</span>
-                                                {getDataQualityBadge(currentGene.dataQuality.tissueAvailability)}
+                                                {getDataQualityBadge(geneInfo?.dataQuality.tissue_availability || 'none')}
                                             </div>
                                             <div className="flex justify-between items-center text-xs">
                                                 <span className="text-muted-foreground">Activity Scores:</span>
-                                                {getDataQualityBadge(currentGene.dataQuality.scoreAvailability)}
-                                            </div>
-                                            <div className="flex justify-between items-center text-xs">
-                                                <span className="text-muted-foreground">CTCF Conservation:</span>
-                                                <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
-                                                    Missing
-                                                </Badge>
+                                                {getDataQualityBadge(geneInfo?.dataQuality.score_availability || 'none')}
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* TAD Domain Warning */}
-                                    {currentGene.dataQuality.ctcfAnnotation === 'missing' && (
-                                        <Alert className="bg-[var(--data-orange)]/10 border-[var(--data-orange)]/20">
-                                            <AlertCircle className="h-4 w-4 text-[var(--data-orange)]" />
-                                            <AlertDescription className="text-xs text-[var(--data-orange)]">
-                                                TAD domain and promoter data currently unavailable for this gene
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
                                 </div>
                             </Card>
                         ) : null}
@@ -1221,12 +1135,12 @@ export function GeneExplorer() {
                                             </div>
 
                                             {/* Data Quality Warnings */}
-                                            {currentGene.dataQuality.scoreAvailability !== 'high' && (
+                                            {geneInfo?.dataQuality.score_availability !== 'high' && displayData && (
                                                 <Alert className="bg-[var(--data-orange)]/10 border-[var(--data-orange)]/20">
                                                     <AlertCircle className="h-4 w-4 text-[var(--data-orange)]" />
                                                     <AlertDescription className="text-sm text-[var(--data-orange)]">
-                                                        <strong>Data Quality Notice:</strong> {currentGene.enhancersWithScore || 0} of {currentGene.enhancers} enhancers
-                                                        ({((((currentGene.enhancersWithScore || 0) / currentGene.enhancers) * 100) || 0).toFixed(0)}%) have activity scores.
+                                                        <strong>Data Quality Notice:</strong> {displayData.enhancersWithScore || 0} of {displayData.enhancers} enhancers
+                                                        ({((((displayData.enhancersWithScore || 0) / displayData.enhancers) * 100) || 0).toFixed(0)}%) have activity scores.
                                                         Faded enhancers indicate missing score data.
                                                     </AlertDescription>
                                                 </Alert>
@@ -1352,13 +1266,10 @@ export function GeneExplorer() {
                                                 />
                                                 <span className="text-muted-foreground">High Density</span>
                                             </div>
-
                                             <Alert className="bg-primary/10 border-primary/20">
                                                 <Info className="h-4 w-4 text-primary" />
                                                 <AlertDescription className="text-sm text-primary">
-                                                    This matrix shows the spatial distribution of <strong>conserved</strong> enhancers across the gene region.
-                                                    Each cell represents a genomic bin, with color intensity indicating the density of conserved enhancers.
-                                                    Green = high conservation density, Grey = low/no conservation.
+                                                    Heatmap showing spatial distribution of conserved enhancers across the gene region. Color intensity indicates enhancer density per genomic bin.
                                                 </AlertDescription>
                                             </Alert>
                                         </div>

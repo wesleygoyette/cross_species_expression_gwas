@@ -298,8 +298,11 @@ def create_genome_tracks_plot_optimized(gene_data, enhancers, snps, stack_tracks
 
 def get_expression_data_cached(gene_symbol, log_scale=False):
     """Get expression data from database with caching for performance"""
+    # Normalize gene symbol: uppercase and strip whitespace
+    gene_upper = gene_symbol.upper().strip()
+    
     # Create cache key
-    cache_key = f"expr_{gene_symbol.upper()}_{log_scale}"
+    cache_key = f"expr_{gene_upper}_{log_scale}"
     
     # Check cache first
     cached_data = cache.get(cache_key)
@@ -307,20 +310,17 @@ def get_expression_data_cached(gene_symbol, log_scale=False):
         return cached_data
     
     # Query database for expression data
-    # PERFORMANCE FIX: Use direct comparison instead of UPPER() to utilize index
-    # Symbols are already stored in uppercase in the database
-    gene_upper = gene_symbol.upper()
-    
+    # Use UPPER() in query to ensure case-insensitive matching across SQLite and MySQL
     # Filter tissues at database level for better performance
     tissues_of_interest = ['Brain', 'Heart', 'Liver']
     
     with connection.cursor() as cursor:
-        # Use parameterized query with tissue filtering
-        # This is much faster than fetching all tissues and filtering in Python
+        # Use UPPER() on both sides to ensure case-insensitive comparison
+        # This works consistently across SQLite and MySQL
         cursor.execute("""
             SELECT tissue, tpm
             FROM gene_expression
-            WHERE symbol = %s
+            WHERE UPPER(TRIM(symbol)) = UPPER(%s)
             AND (tissue LIKE %s OR tissue LIKE %s OR tissue LIKE %s)
         """, [gene_upper, '%Brain%', '%Heart%', '%Liver%'])
         

@@ -129,7 +129,7 @@ export function GWASPortal() {
 
     if (loading) {
         return (
-            <section id="gwas" className="py-16 px-4 bg-background">
+            <section className="py-16 px-4 bg-background">
                 <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
                     <div className="flex items-center gap-3">
                         <Loader2 className="w-6 h-6 animate-spin text-[#00d4ff]" />
@@ -141,7 +141,7 @@ export function GWASPortal() {
     }
 
     return (
-        <section id="gwas" className="py-8 sm:py-16 px-4 bg-background">
+        <section id="gwas" className="py-20 px-4 bg-background">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8">
                     <h2 className="text-3xl mb-3">GWAS Disease Portal</h2>
@@ -432,6 +432,7 @@ export function GWASPortal() {
                         </Card>
                     </div>
                 </div>
+                <div className="h-16 sm:h-24"></div>
             </div>
         </section>
     );

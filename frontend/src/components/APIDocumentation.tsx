@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Code, Copy, Check, ChevronDown, ChevronRight, Search, Database, BarChart3, Download, Activity } from 'lucide-react';
+import { Code, Copy, Check, ChevronDown, ChevronRight, Search, Database, BarChart3, Download, Activity, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -435,32 +435,10 @@ const endpoints: Endpoint[] = [
         }
     },
     {
-        method: 'POST',
-        path: '/api/export/',
-        description: 'Export genomic data in various formats (currently under development)',
-        category: 'Export & Utility',
-        body: [
-            { name: 'type', type: 'string', required: false, description: 'Export format type', example: 'csv' },
-            { name: 'data_type', type: 'string', required: false, description: 'Type of data to export', example: 'gwas' },
-        ],
-        response: 'Export functionality status',
-        example: {
-            request: `curl -X POST "https://crossgenome.site/api/export/" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "type": "csv",
-    "data_type": "gwas"
-  }'`,
-            response: `{
-  "message": "Export functionality to be implemented"
-}`
-        }
-    },
-    {
         method: 'GET',
         path: '/api/health/',
         description: 'API health check and database connectivity status',
-        category: 'Export & Utility',
+        category: 'Utility',
         parameters: [],
         response: 'System health status',
         example: {
@@ -560,7 +538,7 @@ export function APIDocumentation() {
             case 'Visualization': return <BarChart3 className="w-4 h-4" />;
             case 'Data': return <Search className="w-4 h-4" />;
             case 'Analysis': return <Activity className="w-4 h-4" />;
-            case 'Export & Utility': return <Download className="w-4 h-4" />;
+            case 'Utility': return <Settings className="w-4 h-4" />;
             default: return <Code className="w-4 h-4" />;
         }
     };
@@ -640,8 +618,8 @@ export function APIDocumentation() {
                     {/* Custom Tabs Navigation */}
                     <div className="flex flex-wrap gap-1 p-0.5 bg-secondary/30 border border-border rounded-md">
                         <button
-                            onClick={() => setActiveTab('authentication')}
-                            className={`flex-1 min-w-[120px] px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-all duration-150 whitespace-nowrap ${activeTab === 'authentication'
+                            onClick={() => setActiveTab('endpoints')}
+                            className={`flex-1 min-w-[120px] px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-all duration-150 whitespace-nowrap ${activeTab === 'endpoints'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'text-muted-foreground hover:text-foreground'
                                 }`}
@@ -658,8 +636,8 @@ export function APIDocumentation() {
                             Data Models
                         </button>
                         <button
-                            onClick={() => setActiveTab('endpoints')}
-                            className={`flex-1 min-w-[120px] px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-all duration-150 whitespace-nowrap ${activeTab === 'endpoints'
+                            onClick={() => setActiveTab('errors')}
+                            className={`flex-1 min-w-[120px] px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-all duration-150 whitespace-nowrap ${activeTab === 'errors'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'text-muted-foreground hover:text-foreground'
                                 }`}
@@ -897,42 +875,6 @@ export function APIDocumentation() {
                                             </div>
                                         </div>
                                     ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Authentication Tab */}
-                    {activeTab === 'authentication' && (
-                        <div className="space-y-6">
-                            <div className="bg-card border border-border rounded-lg p-6">
-                                <h3 className="mb-4 text-foreground">Authentication</h3>
-                                <p className="text-muted-foreground mb-6">
-                                    Currently, the RegLand API is open for academic research use. For production deployments
-                                    or high-volume queries, please contact us for API key provisioning.
-                                </p>
-
-                                <div className="space-y-4">
-                                    <div className="bg-secondary/30 rounded-lg p-4">
-                                        <h4 className="mb-2 text-foreground">For Future API Key Authentication:</h4>
-                                        <p className="text-sm text-muted-foreground mb-3">
-                                            Include your API key in the request header:
-                                        </p>
-                                        <pre className="bg-[#0d1117] text-[#c9d1d9] p-4 rounded-lg overflow-x-auto">
-                                            <code className="text-sm font-mono">{`curl -X GET "https://crossgenome.site/api/genes/search/?q=BDNF" \\
-  -H "Authorization: Bearer YOUR_API_KEY_HERE" \\
-  -H "Accept: application/json"`}</code>
-                                        </pre>
-                                    </div>
-
-                                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                                        <h4 className="mb-2 text-primary">Research Data Usage</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            RegLand is provided for academic research purposes. Please cite{' '}
-                                            <span className="text-primary font-mono">Berthelot et al. Nature Ecology & Evolution 2018</span>{' '}
-                                            when using data from this platform in publications.
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
                         </div>

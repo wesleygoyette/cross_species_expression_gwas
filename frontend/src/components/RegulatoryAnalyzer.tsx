@@ -142,7 +142,7 @@ export function RegulatoryAnalyzer() {
     }
 
     return (
-        <section id="regulatory" className="py-16 px-4 bg-card/30">
+        <section id="regulatory" className="py-20 px-4 bg-card/30">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8">
                     <h2 className="text-3xl mb-3">Regulatory Landscape Analyzer</h2>
@@ -273,10 +273,10 @@ export function RegulatoryAnalyzer() {
                                         Counts are from database. Select a gene in Gene Explorer to view actual positions.
                                     </p>
                                 </div>
-                                <Button size="sm" variant="outline">
+                                {/* <Button size="sm" variant="outline">
                                     <Download className="w-4 h-4 mr-2" />
                                     Export BED
-                                </Button>
+                                </Button> */}
                             </div>
 
                             <div className="space-y-6">

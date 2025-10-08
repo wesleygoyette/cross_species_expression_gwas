@@ -413,3 +413,98 @@ def health_check(request):
             'message': 'Database connection failed',
             'error': str(e)
         }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+@api_view(['GET'])
+def gene_data_quality(request):
+    """
+    Get minimal data quality metrics for a gene (human genome only).
+    Returns only what the frontend needs for display.
+    
+    Query params:
+    - gene: Gene symbol (required)
+    """
+    gene_symbol = request.GET.get('gene', '').upper()
+    
+    if not gene_symbol:
+        return Response(
+            {'error': 'Gene symbol is required'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        # Always use human genome for data quality
+        species_id = 'human_hg38'
+        
+        with connection.cursor() as cursor:
+            # Get gene info
+            cursor.execute("""
+                SELECT gene_id
+                FROM genes
+                WHERE UPPER(symbol) = %s AND species_id = %s
+                LIMIT 1
+            """, [gene_symbol, species_id])
+            
+            gene_row = cursor.fetchone()
+            if not gene_row:
+                return Response(
+                    {'error': f'Gene {gene_symbol} not found'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            gene_id = gene_row[0]
+            
+            # Get enhancer statistics for this gene (across ALL tissues)
+            cursor.execute("""
+                SELECT 
+                    COUNT(*) as total_enhancers,
+                    COUNT(e.tissue) as enhancers_with_tissue,
+                    COUNT(e.score) as enhancers_with_score,
+                    COUNT(CASE WHEN ec.class = 'conserved' THEN 1 END) as conserved_enhancers
+                FROM gene_to_enhancer gte
+                LEFT JOIN enhancers_all e ON gte.enh_id = e.enh_id
+                LEFT JOIN enhancer_class ec ON e.enh_id = ec.enh_id
+                WHERE gte.gene_id = %s
+            """, [gene_id])
+            
+            stats_row = cursor.fetchone()
+            total_enhancers = stats_row[0] or 0
+            enhancers_with_tissue = stats_row[1] or 0
+            enhancers_with_score = stats_row[2] or 0
+            conserved_enhancers = stats_row[3] or 0
+            
+            # Calculate percentages
+            tissue_percent = (enhancers_with_tissue / total_enhancers * 100) if total_enhancers > 0 else 0
+            score_percent = (enhancers_with_score / total_enhancers * 100) if total_enhancers > 0 else 0
+            conservation_percent = (conserved_enhancers / total_enhancers * 100) if total_enhancers > 0 else 0
+            
+            # Determine quality levels
+            tissue_quality = 'high' if tissue_percent >= 70 else ('low' if tissue_percent >= 30 else 'none')
+            score_quality = 'high' if score_percent >= 60 else ('low' if score_percent >= 20 else 'none')
+            
+            # Get available species for this gene
+            cursor.execute("""
+                SELECT DISTINCT species_id
+                FROM genes
+                WHERE UPPER(symbol) = %s
+                ORDER BY species_id
+            """, [gene_symbol])
+            
+            available_species = [row[0] for row in cursor.fetchall()]
+        
+        # Build minimal response with only what frontend needs
+        response_data = {
+            'tissue_availability': tissue_quality,
+            'score_availability': score_quality,
+            'conservation_percent': round(conservation_percent, 1),
+            'available_species': available_species
+        }
+        
+        return Response(response_data)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Failed to get data quality: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+

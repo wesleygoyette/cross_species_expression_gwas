@@ -211,6 +211,30 @@ const endpoints: Endpoint[] = [
     },
     {
         method: 'GET',
+        path: '/api/genes/data-quality/',
+        description: 'Get data quality metrics for a gene',
+        category: 'Gene & Region',
+        parameters: [
+            { name: 'gene', type: 'string', required: true, description: 'Gene symbol (e.g., BDNF, FOXP2)' },
+        ],
+        response: 'Data quality metrics including tissue availability, score availability, and conservation percentage',
+        example: {
+            request: `curl -X GET "https://crossgenome.site/api/genes/data-quality/?gene=BDNF" \\
+  -H "Accept: application/json"`,
+            response: `{
+  "tissue_availability": "high",
+  "score_availability": "high",
+  "conservation_percent": 89.0,
+  "available_species": [
+    "human_hg38",
+    "mouse_mm39",
+    "pig_susScr11"
+  ]
+}`
+        }
+    },
+    {
+        method: 'GET',
         path: '/api/species/',
         description: 'List all available species and their genome builds',
         category: 'Data',
@@ -607,7 +631,17 @@ export function APIDocumentation() {
                             type="text"
                             placeholder="Search endpoints..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                if (e.target.value.trim() !== '') {
+                                    setActiveTab('endpoints');
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && searchQuery.trim() !== '') {
+                                    setActiveTab('endpoints');
+                                }
+                            }}
                             className="pl-10 bg-input-background border-border"
                         />
                     </div>

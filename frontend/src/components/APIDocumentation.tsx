@@ -642,8 +642,8 @@ export function APIDocumentation() {
                         <button
                             onClick={() => setActiveTab('endpoints')}
                             className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all duration-150 ${activeTab === 'endpoints'
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
                             Endpoints
@@ -651,8 +651,8 @@ export function APIDocumentation() {
                         <button
                             onClick={() => setActiveTab('models')}
                             className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all duration-150 ${activeTab === 'models'
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
                             Data Models
@@ -660,8 +660,8 @@ export function APIDocumentation() {
                         <button
                             onClick={() => setActiveTab('authentication')}
                             className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all duration-150 ${activeTab === 'authentication'
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
                             Authentication
@@ -669,8 +669,8 @@ export function APIDocumentation() {
                         <button
                             onClick={() => setActiveTab('errors')}
                             className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all duration-150 ${activeTab === 'errors'
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
                             Error Codes
@@ -1054,8 +1054,14 @@ export function APIDocumentation() {
                         <p className="text-sm text-muted-foreground mb-4">
                             Join our developer community or contact our research team for API support.
                         </p>
-                        <Button variant="outline" className="border-primary/30 hover:bg-primary/10">
-                            Contact Support
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="border-primary/30 hover:bg-primary/10"
+                        >
+                            <a href="mailto:wesley.goyette@gmail.com">
+                                Contact Support
+                            </a>
                         </Button>
                     </div>
 
@@ -1064,8 +1070,18 @@ export function APIDocumentation() {
                         <p className="text-sm text-muted-foreground mb-4">
                             Stay informed about new endpoints, features, and breaking changes.
                         </p>
-                        <Button variant="outline" className="border-primary/30 hover:bg-primary/10">
-                            View Changelog
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="border-primary/30 hover:bg-primary/10"
+                        >
+                            <a
+                                href="https://github.com/wesleygoyette/cross_species_expression_gwas/commits/main/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                View Changelog
+                            </a>
                         </Button>
                     </div>
                 </div>

@@ -846,10 +846,10 @@ export function GeneExplorer() {
                                             <div className="flex justify-between items-center mb-4">
                                                 <h3 className="text-foreground">Multi-Species Genome Browser</h3>
                                                 <div className="flex items-center gap-2">
-                                                    <Button size="sm" variant="outline">
+                                                    {/* <Button size="sm" variant="outline">
                                                         <Download className="w-4 h-4 mr-2" />
                                                         Export BED
-                                                    </Button>
+                                                    </Button> */}
                                                 </div>
                                             </div>
 
@@ -974,44 +974,49 @@ export function GeneExplorer() {
                                                         <div key={species} className="space-y-2">
                                                             <div className="flex items-center justify-between">
                                                                 <div className="flex items-center gap-2">
-                                                                    <h4 className="text-sm text-foreground">{species}</h4>
+                                                                    <h4 className="text-sm font-medium text-foreground">
+                                                                        {species}
+                                                                        <span className="text-xs text-muted-foreground font-normal ml-1.5">
+                                                                            ({species === 'Human' ? 'Homo sapiens' : species === 'Mouse' ? 'Mus musculus' : 'Sus scrofa'})
+                                                                        </span>
+                                                                    </h4>
                                                                     {!hasData && (
                                                                         <Badge variant="outline" className="text-xs text-muted-foreground">
                                                                             No data
                                                                         </Badge>
                                                                     )}
                                                                 </div>
-                                                                <Badge variant="secondary" className="text-xs">
-                                                                    {identity}% identity
-                                                                </Badge>
-                                                            </div>
-
-                                                            <div
+                                                                {/* <Badge variant="secondary" className="text-xs">
+                                                                    {identity}% sequence identity
+                                                                </Badge> */}
+                                                            </div>                                                            <div
                                                                 className={`h-32 bg-secondary/20 rounded border border-border relative overflow-hidden transition-all duration-200 ${!hasData ? 'opacity-40' : ''}`}
                                                             >
                                                                 {hasData ? (
                                                                     <>
-                                                                        {/* Chromosome ruler */}
+                                                                        {/* Genomic coordinates ruler */}
                                                                         <div className="absolute top-0 left-0 right-0 h-6 border-b border-border/50 bg-secondary/10">
+                                                                            {/* Chromosome label */}
+                                                                            <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-foreground/80 bg-secondary/50 px-1.5 py-0.5 rounded">
+                                                                                {speciesData.gene.chrom}
+                                                                            </div>
                                                                             <div className="flex justify-between px-2 h-full items-center text-[10px] text-muted-foreground font-mono">
                                                                                 {Array.from({ length: Math.min(11, Math.ceil(zoomLevel * 5)) }).map((_, i) => {
                                                                                     const tickPosition = (i / Math.min(10, Math.ceil(zoomLevel * 5) - 1)) * 100;
-                                                                                    const genomicPos = clampedViewStart + (currentWindowSize * i / Math.min(10, Math.ceil(zoomLevel * 5) - 1));
+                                                                                    const genomicPos = geneCoords.start + clampedViewStart + (currentWindowSize * i / Math.min(10, Math.ceil(zoomLevel * 5) - 1));
                                                                                     return (
                                                                                         <div key={i} className="flex flex-col items-center" style={{ left: `${tickPosition}%`, position: 'absolute' }}>
                                                                                             <div className="w-px h-2 bg-border" />
                                                                                             {zoomLevel >= 2 && (
                                                                                                 <span className="text-[8px] mt-0.5">
-                                                                                                    {(genomicPos / 1000).toFixed(0)}k
+                                                                                                    {(genomicPos / 1000000).toFixed(3)}
                                                                                                 </span>
                                                                                             )}
                                                                                         </div>
                                                                                     );
                                                                                 })}
                                                                             </div>
-                                                                        </div>
-
-                                                                        {/* Gene body - responsive to zoom and pan */}
+                                                                        </div>                                                                        {/* Gene body - responsive to zoom and pan */}
                                                                         {geneLeftPercent < 100 && geneRightPercent > 0 && (
                                                                             <div
                                                                                 className="absolute top-12 h-6 bg-primary/60 rounded border border-primary flex items-center justify-center transition-all duration-200"
@@ -1178,10 +1183,14 @@ export function GeneExplorer() {
                                                                             ) : null;
                                                                         })}
 
-                                                                        {/* Scale */}
+                                                                        {/* Genomic coordinate scale */}
                                                                         <div className="absolute bottom-1 left-0 right-0 flex justify-between px-2 text-[10px] text-muted-foreground font-mono">
-                                                                            <span>{((geneCoords.start + clampedViewStart) / 1000).toFixed(0)}kb</span>
-                                                                            <span>{((geneCoords.start + clampedViewStart + currentWindowSize) / 1000).toFixed(0)}kb</span>
+                                                                            <span>
+                                                                                {speciesData.gene.chrom}:{((geneCoords.start + clampedViewStart) / 1000000).toFixed(2)} Mb
+                                                                            </span>
+                                                                            <span>
+                                                                                {speciesData.gene.chrom}:{((geneCoords.start + clampedViewStart + currentWindowSize) / 1000000).toFixed(2)} Mb
+                                                                            </span>
                                                                         </div>
                                                                     </>
                                                                 ) : (
@@ -1199,19 +1208,19 @@ export function GeneExplorer() {
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-secondary/20 rounded-lg border border-border">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-4 h-4 bg-primary rounded" />
-                                                    <span className="text-xs text-muted-foreground">Gene</span>
+                                                    <span className="text-xs text-muted-foreground">Gene locus</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-4 h-4 bg-[var(--data-orange)] rounded" />
-                                                    <span className="text-xs text-muted-foreground">Enhancer</span>
+                                                    <span className="text-xs text-muted-foreground">Cis-regulatory element</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-4 h-4 bg-[var(--genomic-green)]/60 rounded" />
-                                                    <span className="text-xs text-muted-foreground">CTCF Site</span>
+                                                    <span className="text-xs text-muted-foreground">CTCF binding site</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-4 h-4 bg-destructive rounded-full" />
-                                                    <span className="text-xs text-muted-foreground">GWAS SNP</span>
+                                                    <span className="text-xs text-muted-foreground">GWAS variant</span>
                                                 </div>
                                             </div>
 

@@ -996,10 +996,6 @@ export function GeneExplorer() {
                                                                     <>
                                                                         {/* Genomic coordinates ruler */}
                                                                         <div className="absolute top-0 left-0 right-0 h-6 border-b border-border/50 bg-secondary/10">
-                                                                            {/* Chromosome label */}
-                                                                            <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-foreground/80 bg-secondary/50 px-1.5 py-0.5 rounded">
-                                                                                {speciesData.gene.chrom}
-                                                                            </div>
                                                                             <div className="flex justify-between px-2 h-full items-center text-[10px] text-muted-foreground font-mono">
                                                                                 {Array.from({ length: Math.min(11, Math.ceil(zoomLevel * 5)) }).map((_, i) => {
                                                                                     const tickPosition = (i / Math.min(10, Math.ceil(zoomLevel * 5) - 1)) * 100;

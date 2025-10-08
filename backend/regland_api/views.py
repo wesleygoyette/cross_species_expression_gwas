@@ -1,38 +1,46 @@
-import json
-import os
-import sqlite3
 from django.db import connection
-from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend
-import matplotlib.pyplot as plt
-import io
-import base64
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.utils import PlotlyJSONEncoder
 
-from .models import Gene, Enhancer, EnhancerClass, GWASSnp, CTCFSite, TADDomain
 from .utils import (
     get_gene_region,
-    get_enhancers_in_region,
-    get_gwas_snps_in_region,
-    get_ctcf_sites_in_region,
-    create_genome_tracks_plot,
-    create_conservation_heatmap,
-    get_expression_data,
-    create_expression_plot,
     get_ucsc_url,
     get_enhancers_in_region_optimized,
     get_gwas_snps_in_region_optimized,
-    get_ctcf_sites_in_region_optimized,
-    create_genome_tracks_plot_optimized,
-    create_conservation_heatmap_optimized
+    get_ctcf_sites_in_region_optimized
+)
+@api_view(['GET'])
+def gene_search(request):
+    """Search for genes by symbol"""
+    query = request.GET.get('q', '').upper()
+    species_id = request.GET.get('species', 'human_hg38')
+    if not query:
+        return Response({'genes': []})
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT gene_id, symbol, species_id, chrom, start, end
+            FROM genes
+            WHERE UPPER(symbol) LIKE %s AND species_id = %s
+            ORDER BY 
+                CASE WHEN UPPER(symbol) = %s THEN 1 ELSE 2 END,
+                symbol
+            LIMIT 10
+        """, [f'%{query}%', species_id, query])
+        columns = [col[0] for col in cursor.description]
+        genes = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return Response({'genes': genes})
+from django.db import connection
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
+from .utils import (
+    get_gene_region,
+    get_ucsc_url,
+    get_enhancers_in_region_optimized,
+    get_gwas_snps_in_region_optimized,
+    get_ctcf_sites_in_region_optimized
 )
 
 
@@ -77,33 +85,6 @@ def combined_gene_data(request):
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-def gene_search(request):
-    """Search for genes by symbol"""
-    query = request.GET.get('q', '').upper()
-    species_id = request.GET.get('species', 'human_hg38')
-    
-    if not query:
-        return Response({'genes': []})
-    
-    # Get genes matching the query - prioritize exact matches
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT gene_id, symbol, species_id, chrom, start, end
-            FROM genes
-            WHERE UPPER(symbol) LIKE %s AND species_id = %s
-            ORDER BY 
-                CASE WHEN UPPER(symbol) = %s THEN 1 ELSE 2 END,
-                symbol
-            LIMIT 10
-        """, [f'%{query}%', species_id, query])
-        
-        columns = [col[0] for col in cursor.description]
-        genes = [dict(zip(columns, row)) for row in cursor.fetchall()]
-    
-    return Response({'genes': genes})
 
 
 @api_view(['GET'])
@@ -154,98 +135,10 @@ def gene_region_data(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
-def conservation_matrix(request):
-    """Generate conservation matrix data"""
-    gene_symbol = request.GET.get('gene', 'BDNF').upper()
-    species_id = request.GET.get('species', 'human_hg38')
-    tissue = request.GET.get('tissue', 'Liver')
-    tss_kb = int(request.GET.get('tss_kb', 100))
-    nbins = int(request.GET.get('nbins', 30))
-    enhancer_classes = request.GET.getlist('classes[]') or ['conserved', 'gained', 'lost', 'unlabeled']
-    normalize_rows = request.GET.get('norm_rows', 'false').lower() == 'true'
-    
-    try:
-        # Get gene region
-        gene_data = get_gene_region(gene_symbol, species_id, tss_kb)
-        if not gene_data:
-            return Response({'error': 'Gene not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Generate conservation matrix data
-        matrix_data = create_conservation_heatmap(
-            species_id, gene_data['chrom'], gene_data['start'], gene_data['end'],
-            tissue, enhancer_classes, nbins, normalize_rows, gene_data
-        )
-        
-        return Response(matrix_data)
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
-def genome_tracks_plot(request):
-    """Generate genome tracks visualization with performance optimizations"""
-    gene_symbol = request.GET.get('gene', 'BDNF').upper()
-    species_id = request.GET.get('species', 'human_hg38')
-    tissue = request.GET.get('tissue', 'Liver')
-    tss_kb = int(request.GET.get('tss_kb', 100))
-    enhancer_classes = request.GET.getlist('classes[]') or ['conserved', 'gained', 'lost', 'unlabeled']
-    stack_tracks = request.GET.get('stack_tracks', 'true').lower() == 'true'
-    show_gene = request.GET.get('show_gene', 'true').lower() == 'true'
-    show_snps = request.GET.get('show_snps', 'true').lower() == 'true'
-    
-    try:
-        # Get gene region
-        gene_data = get_gene_region(gene_symbol, species_id, tss_kb)
-        if not gene_data:
-            return Response({'error': 'Gene not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Get optimized data using single connection
-        with connection.cursor() as cursor:
-            enhancers = get_enhancers_in_region_optimized(
-                cursor, species_id, gene_data['chrom'], 
-                gene_data['start'], gene_data['end'],
-                tissue, enhancer_classes
-            )
-            
-            gwas_snps = get_gwas_snps_in_region_optimized(
-                cursor, gene_data['gene_id'], gene_data['chrom'],
-                gene_data['start'], gene_data['end']
-            )
-        
-        # Create optimized plot
-        plot_data = create_genome_tracks_plot_optimized(
-            gene_data, enhancers, gwas_snps,
-            stack_tracks, show_gene, show_snps
-        )
-        
-        return Response(plot_data)
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
-def expression_data(request):
-    """Get expression data for a gene"""
-    gene_symbol = request.GET.get('gene', 'BDNF').upper()
-    log_scale = request.GET.get('log_scale', 'false').lower() == 'true'
-    
-    try:
-        # Get expression data
-        expr_data = get_expression_data(gene_symbol, log_scale)
-        
-        # Create expression plot
-        plot_data = create_expression_plot(expr_data, gene_symbol, log_scale)
-        
-        return Response({
-            'expression_data': expr_data,
-            'plot_data': plot_data
-        })
-        
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -428,15 +321,14 @@ def health_check(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             cursor.fetchone()
-        
         return Response({
-            'status': 'healthy', 
+            'status': 'healthy',
             'message': 'Regland API is running',
             'database': 'connected'
         })
     except Exception as e:
         return Response({
-            'status': 'unhealthy', 
+            'status': 'unhealthy',
             'message': 'Database connection failed',
             'error': str(e)
         }, status=status.HTTP_503_SERVICE_UNAVAILABLE)

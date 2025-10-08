@@ -160,9 +160,56 @@ export async function getGenePresets(): Promise<any> {
 /**
  * Get available GWAS categories
  */
-export async function getGWASCategories(): Promise<any> {
+export async function getGWASCategories(): Promise<{ categories: string[] }> {
     const url = `${API_BASE_URL}${API_PREFIX}/gwas/categories/`;
     const response = await fetch(url);
+    return handleResponse<{ categories: string[] }>(response);
+}
+
+/**
+ * Get GWAS traits with their SNP information
+ * This aggregates data from the gwas_snps table
+ */
+export async function getGWASTraits(category?: string): Promise<{
+    traits: Array<{
+        trait: string;
+        snp_count: number;
+        gene_count: number;
+        category: string;
+        min_pval: number;
+    }>;
+}> {
+    const url = `${API_BASE_URL}${API_PREFIX}/gwas/traits/`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            category: category || null
+        })
+    });
+    return handleResponse<any>(response);
+}
+
+/**
+ * Get detailed SNP information for a specific trait
+ */
+export async function getTraitSNPs(trait: string, limit: number = 100): Promise<{
+    snps: GWASSnp[];
+    total_count: number;
+}> {
+    const url = `${API_BASE_URL}${API_PREFIX}/gwas/trait-snps/`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            trait,
+            limit
+        })
+    });
     return handleResponse<any>(response);
 }
 

@@ -10,6 +10,7 @@ from .utils import (
     get_gwas_snps_in_region_optimized,
     get_ctcf_sites_in_region_optimized
 )
+
 @api_view(['GET'])
 def gene_search(request):
     """Search for genes by symbol"""
@@ -30,18 +31,6 @@ def gene_search(request):
         columns = [col[0] for col in cursor.description]
         genes = [dict(zip(columns, row)) for row in cursor.fetchall()]
     return Response({'genes': genes})
-from django.db import connection
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-
-from .utils import (
-    get_gene_region,
-    get_ucsc_url,
-    get_enhancers_in_region_optimized,
-    get_gwas_snps_in_region_optimized,
-    get_ctcf_sites_in_region_optimized
-)
 
 
 @api_view(['POST'])
@@ -176,9 +165,101 @@ def gene_presets(request):
 
 @api_view(['GET'])
 def gwas_categories(request):
-    """Get available GWAS categories"""
-    categories = ['Alcohol', 'BMI', 'Inflammation']
+    """Get available GWAS categories with counts"""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT DISTINCT category, COUNT(*) as count
+            FROM gwas_snps
+            WHERE category IS NOT NULL AND category != ''
+            GROUP BY category
+            ORDER BY count DESC
+        """)
+        rows = cursor.fetchall()
+        categories = [{'id': row[0], 'name': row[0], 'count': row[1]} for row in rows]
+    
     return Response({'categories': categories})
+
+
+@api_view(['POST'])
+def gwas_traits(request):
+    """Get GWAS traits with aggregated statistics"""
+    category = request.data.get('category')
+    
+    with connection.cursor() as cursor:
+        query = """
+            SELECT 
+                g.trait,
+                COUNT(DISTINCT g.snp_id) as snp_count,
+                COUNT(DISTINCT ge.gene_id) as gene_count,
+                g.category,
+                MIN(g.pval) as min_pval
+            FROM gwas_snps g
+            LEFT JOIN snp_to_enhancer se ON g.snp_id = se.snp_id
+            LEFT JOIN gene_to_enhancer ge ON se.enh_id = ge.enh_id
+            WHERE g.trait IS NOT NULL AND g.trait != ''
+        """
+        params = []
+        
+        if category and category != 'all':
+            query += " AND g.category = %s"
+            params.append(category)
+        
+        query += """
+            GROUP BY g.trait, g.category
+            ORDER BY snp_count DESC, min_pval ASC
+            LIMIT 100
+        """
+        
+        cursor.execute(query, params)
+        columns = [col[0] for col in cursor.description]
+        traits = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    
+    return Response({'traits': traits})
+
+
+@api_view(['POST'])
+def trait_snps(request):
+    """Get detailed SNP information for a specific trait"""
+    trait = request.data.get('trait')
+    limit = int(request.data.get('limit', 100))
+    
+    if not trait:
+        return Response({'error': 'Trait is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT DISTINCT
+                g.snp_id,
+                g.rsid,
+                g.chrom,
+                g.pos,
+                g.trait,
+                g.pval,
+                g.category,
+                g.source,
+                GROUP_CONCAT(DISTINCT ge2.symbol) as associated_genes
+            FROM gwas_snps g
+            LEFT JOIN snp_to_enhancer se ON g.snp_id = se.snp_id
+            LEFT JOIN gene_to_enhancer ge ON se.enh_id = ge.enh_id
+            LEFT JOIN genes ge2 ON ge.gene_id = ge2.gene_id
+            WHERE g.trait = %s
+            GROUP BY g.snp_id, g.rsid, g.chrom, g.pos, g.trait, g.pval, g.category, g.source
+            ORDER BY g.pval ASC
+            LIMIT %s
+        """, [trait, limit])
+        
+        columns = [col[0] for col in cursor.description]
+        snps = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        # Get total count
+        cursor.execute("""
+            SELECT COUNT(DISTINCT snp_id)
+            FROM gwas_snps
+            WHERE trait = %s
+        """, [trait])
+        total_count = cursor.fetchone()[0]
+    
+    return Response({'snps': snps, 'total_count': total_count})
 
 
 @api_view(['POST'])

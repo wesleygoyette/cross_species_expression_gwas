@@ -296,6 +296,7 @@ export function GeneExplorer() {
         }
     };
 
+
     // Helper function to calculate if an element should be visible in current zoom window
     const isInView = (elementStart: number, elementEnd: number) => {
         const viewEnd = clampedViewStart + currentWindowSize;
@@ -307,6 +308,30 @@ export function GeneExplorer() {
         const relativePos = genomicPosition - clampedViewStart;
         return (relativePos / currentWindowSize) * 100;
     };
+
+    // Conservation color gradient (low to high)
+    // Colors: low = #b0b0b0 (grey), mid = #e53935 (red), high = #43a047 (green)
+    function getConservationColor(val: number) {
+        // val: 0-100
+        // Map 0-50: grey to red, 50-100: red to green
+        if (val <= 50) {
+            // Interpolate grey (#b0b0b0) to red (#e53935)
+            const t = val / 50;
+            // RGB for grey: (176,176,176), red: (229,57,53)
+            const r = Math.round(176 + (229 - 176) * t);
+            const g = Math.round(176 + (57 - 176) * t);
+            const b = Math.round(176 + (53 - 176) * t);
+            return `rgb(${r},${g},${b})`;
+        } else {
+            // Interpolate red (#e53935) to green (#43a047)
+            const t = (val - 50) / 50;
+            // RGB for red: (229,57,53), green: (67,160,71)
+            const r = Math.round(229 + (67 - 229) * t);
+            const g = Math.round(57 + (160 - 57) * t);
+            const b = Math.round(53 + (71 - 53) * t);
+            return `rgb(${r},${g},${b})`;
+        }
+    }
 
     return (
         <section id="gene-explorer" className="py-20 px-4 bg-gradient-to-b from-card/30 to-background">
@@ -870,51 +895,57 @@ export function GeneExplorer() {
                                         </Badge>
                                     </div>
 
+
                                     <div className="space-y-4">
-                                        {['Human', 'Mouse', 'Pig'].map((species, idx) => (
-                                            <div key={species} className="space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-sm text-foreground">{species}</span>
-                                                    <span className="text-xs text-muted-foreground font-mono">
-                                                        {species === 'Human' ? '100%' : species === 'Mouse' ? '87%' : '79%'} avg conservation
-                                                    </span>
-                                                </div>
-                                                <div className="h-12 bg-secondary/20 rounded border border-border p-1">
-                                                    <div className="grid grid-cols-50 gap-0.5 h-full">
-                                                        {Array.from({ length: 50 }).map((_, i) => {
-                                                            const baseConservation = species === 'Human' ? 95 : species === 'Mouse' ? 85 : 75;
-                                                            const conservation = baseConservation + (Math.random() * 20 - 10);
-                                                            const color = conservation > 90 ? 'var(--genomic-green)' :
-                                                                conservation > 80 ? 'var(--genomic-blue)' :
-                                                                    conservation > 70 ? 'var(--data-orange)' : '#8b91b0';
-                                                            return (
-                                                                <TooltipProvider key={i}>
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger asChild>
-                                                                            <div
-                                                                                className="rounded-sm cursor-help"
-                                                                                style={{
-                                                                                    backgroundColor: color,
-                                                                                    opacity: conservation / 100
-                                                                                }}
-                                                                            />
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent>
-                                                                            <p className="text-xs">Bin {i + 1}: {conservation.toFixed(0)}% conserved</p>
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                </TooltipProvider>
-                                                            );
-                                                        })}
+                                        {['Human', 'Mouse', 'Pig'].map((species, idx) => {
+                                            // Simulate conservation values: Human 100%, Mouse 87%, Pig 79% (spread bins around these)
+                                            const avg = species === 'Human' ? 100 : species === 'Mouse' ? 87 : 79;
+                                            return (
+                                                <div key={species} className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-foreground">{species}</span>
+                                                        <span className="text-xs text-muted-foreground font-mono">
+                                                            {avg}% avg conservation
+                                                        </span>
+                                                    </div>
+                                                    <div className="h-12 bg-secondary/20 rounded border border-border p-1">
+                                                        <div className="grid grid-cols-50 gap-0.5 h-full">
+                                                            {Array.from({ length: 50 }).map((_, i) => {
+                                                                // Simulate bin value: add some noise around avg
+                                                                const val = Math.max(0, Math.min(100, Math.round(avg + (Math.sin(i / 7 + idx) * 8) + (Math.random() - 0.5) * 6)));
+                                                                return (
+                                                                    <TooltipProvider key={i}>
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <div
+                                                                                    style={{ background: getConservationColor(val), borderRadius: 2 }}
+                                                                                    className="h-full w-full cursor-help"
+                                                                                />
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                <span className="text-xs font-mono">Bin {i + 1}: <b>{val}%</b> conservation</span>
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    </TooltipProvider>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
 
+
+                                    {/* Legend: true gradient bar */}
                                     <div className="flex items-center gap-4 text-xs">
                                         <span className="text-muted-foreground">Low</span>
-                                        <div className="flex-1 h-3 bg-gradient-to-r from-[#8b91b0] via-[var(--data-orange)] via-[var(--genomic-blue)] to-[var(--genomic-green)] rounded" />
+                                        <div
+                                            className="flex-1 h-3 rounded"
+                                            style={{
+                                                background: 'linear-gradient(90deg, #b0b0b0 0%, #e53935 50%, #43a047 100%)'
+                                            }}
+                                        />
                                         <span className="text-muted-foreground">High Conservation</span>
                                     </div>
 

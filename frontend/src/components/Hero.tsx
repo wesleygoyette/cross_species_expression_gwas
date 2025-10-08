@@ -24,13 +24,13 @@ export function Hero() {
               Analyze <span className="text-[#00ff88]">26,404 disease-associated variants</span> spanning <span className="text-[#ff8c42]">790 human traits</span>.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Button className="bg-[#00d4ff] hover:bg-[#00d4ff]/90 text-[#0a0e27]">
-                Explore Data <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-              <Button variant="outline" className="border-[#00d4ff]/30 hover:bg-[#00d4ff]/10">
-                <Database className="mr-2 w-4 h-4" />
-                API Documentation
-              </Button>
+                <a href="#gene-explorer" className="bg-[#00d4ff] hover:bg-[#00d4ff]/90 text-[#0a0e27] inline-flex items-center px-4 py-2 rounded-md font-medium transition-colors">
+                  Explore Data <ArrowRight className="ml-2 w-4 h-4" />
+                </a>
+                <a href="#api" className="border border-[#00d4ff]/30 hover:bg-[#00d4ff]/10 text-foreground inline-flex items-center px-4 py-2 rounded-md font-medium transition-colors">
+                  <Database className="mr-2 w-4 h-4" />
+                  API Documentation
+                </a>
             </div>
           </div>
           

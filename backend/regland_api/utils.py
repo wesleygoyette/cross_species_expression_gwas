@@ -119,17 +119,13 @@ def get_enhancers_in_region_optimized(cursor, species_id, chrom, start, end, tis
 
 
 def get_gwas_snps_in_region_optimized(cursor, gene_id, chrom, start, end):
-    """Optimized GWAS SNP query using existing cursor with better limits"""
+    """Optimized GWAS SNP query - returns all SNPs in the region (not just those overlapping enhancers)"""
     cursor.execute("""
-        SELECT DISTINCT s.snp_id, s.rsid, s.chrom, s.pos, s.trait, s.pval, s.category
+        SELECT DISTINCT s.snp_id, s.rsid, s.chrom, s.pos, s.trait, s.pval, s.category, s.source
         FROM gwas_snps s
-        JOIN snp_to_enhancer se ON se.snp_id = s.snp_id
-        JOIN enhancers_all e ON e.enh_id = se.enh_id
-        JOIN gene_to_enhancer ge ON ge.enh_id = e.enh_id
-        WHERE ge.gene_id = %s AND s.chrom = %s AND s.pos BETWEEN %s AND %s
+        WHERE s.chrom = %s AND s.pos BETWEEN %s AND %s
         ORDER BY COALESCE(s.pval, 1e99) ASC, s.rsid ASC
-        LIMIT 25
-    """, [gene_id, chrom, start, end])
+    """, [chrom, start, end])
     
     columns = [col[0] for col in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -361,7 +357,7 @@ def load_expression_cache():
         return cached_data
     
     # Load expression data
-    expression_file = settings.BASE_DIR.parent.parent / 'data' / 'expression_tpm.tsv'
+    expression_file = settings.BASE_DIR / 'data' / 'expression_tpm.tsv'
     expression_cache = {}
     
     try:
@@ -492,18 +488,14 @@ def get_enhancers_in_region(species_id, chrom, start, end, tissue, enhancer_clas
 
 
 def get_gwas_snps_in_region(gene_id, chrom, start, end):
-    """Get GWAS SNPs linked to enhancers in the region with optimizations"""
+    """Get all GWAS SNPs in the region (not just those linked to enhancers)"""
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT DISTINCT s.snp_id, s.rsid, s.chrom, s.pos, s.trait, s.pval, s.category
+            SELECT DISTINCT s.snp_id, s.rsid, s.chrom, s.pos, s.trait, s.pval, s.category, s.source
             FROM gwas_snps s
-            JOIN snp_to_enhancer se ON se.snp_id = s.snp_id
-            JOIN enhancers_all e ON e.enh_id = se.enh_id
-            JOIN gene_to_enhancer ge ON ge.enh_id = e.enh_id
-            WHERE ge.gene_id = %s AND s.chrom = %s AND s.pos BETWEEN %s AND %s
+            WHERE s.chrom = %s AND s.pos BETWEEN %s AND %s
             ORDER BY COALESCE(s.pval, 1e99) ASC, s.rsid ASC
-            LIMIT 200
-        """, [gene_id, chrom, start, end])
+        """, [chrom, start, end])
         
         columns = [col[0] for col in cursor.description]
         snps = [dict(zip(columns, row)) for row in cursor.fetchall()]

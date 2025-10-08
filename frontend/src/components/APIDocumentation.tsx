@@ -638,10 +638,10 @@ export function APIDocumentation() {
                 {/* Main Content Tabs */}
                 <div className="space-y-6">
                     {/* Custom Tabs Navigation */}
-                    <div className="flex gap-1 p-0.5 bg-secondary/30 border border-border rounded-md">
+                    <div className="flex flex-wrap gap-1 p-0.5 bg-secondary/30 border border-border rounded-md">
                         <button
-                            onClick={() => setActiveTab('endpoints')}
-                            className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all duration-150 ${activeTab === 'endpoints'
+                            onClick={() => setActiveTab('authentication')}
+                            className={`flex-1 min-w-[120px] px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-all duration-150 whitespace-nowrap ${activeTab === 'authentication'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'text-muted-foreground hover:text-foreground'
                                 }`}
@@ -650,7 +650,7 @@ export function APIDocumentation() {
                         </button>
                         <button
                             onClick={() => setActiveTab('models')}
-                            className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all duration-150 ${activeTab === 'models'
+                            className={`flex-1 min-w-[120px] px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-all duration-150 whitespace-nowrap ${activeTab === 'models'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'text-muted-foreground hover:text-foreground'
                                 }`}
@@ -658,23 +658,15 @@ export function APIDocumentation() {
                             Data Models
                         </button>
                         <button
-                            onClick={() => setActiveTab('authentication')}
-                            className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all duration-150 ${activeTab === 'authentication'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                        >
-                            Authentication
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('errors')}
-                            className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all duration-150 ${activeTab === 'errors'
+                            onClick={() => setActiveTab('endpoints')}
+                            className={`flex-1 min-w-[120px] px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-all duration-150 whitespace-nowrap ${activeTab === 'endpoints'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
                             Error Codes
                         </button>
+
                     </div>
 
                     {/* Endpoints Tab */}

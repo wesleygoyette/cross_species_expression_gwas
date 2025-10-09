@@ -141,6 +141,23 @@ prune: ## Remove unused Docker resources
 	@echo "Pruning unused Docker resources..."
 	docker system prune -f
 
+# Production commands
+prod-migrate: ## Run Django migrations in production
+	@echo "Running migrations in production..."
+	docker-compose -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
+
+prod-logs: ## Show production logs
+	docker-compose -f docker-compose.prod.yml logs -f
+
+prod-status: ## Show production service status
+	docker-compose -f docker-compose.prod.yml ps
+
+prod-restart: ## Restart production services
+	docker-compose -f docker-compose.prod.yml restart
+
+prod-shell-backend: ## Open shell in production backend container
+	docker-compose -f docker-compose.prod.yml exec backend /bin/bash
+
 # Development workflow
 dev: build up logs ## Full development setup: build, start, and show logs
 

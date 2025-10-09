@@ -97,5 +97,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_indexes, drop_indexes),
+        migrations.RunPython(create_indexes, drop_indexes, atomic=False),
     ]

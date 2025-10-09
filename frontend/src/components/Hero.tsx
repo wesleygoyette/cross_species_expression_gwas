@@ -17,7 +17,7 @@ export function Hero() {
                             <span className="text-sm text-[#00d4ff]">Cross-Species Regulatory Genomics Platform</span>
                         </div>
                         <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6 py-2 leading-[1.2] bg-gradient-to-r from-white via-[#00d4ff] to-[#00ff88] bg-clip-text text-transparent font-bold [-webkit-box-decoration-break:clone] [box-decoration-break:clone]">
-                            Evolutionary Conservation of Gene Regulatory Landscapes
+                            Evolutionary Conservation of Gene Regulatory Landscapes PLEASE WORK
                         </h1>
                         <p className="text-lg text-foreground/70 mb-8 leading-relaxed">
                             Explore <span className="text-[#00d4ff]">3.9 million regulatory elements</span> across human, mouse, and pig genomes.

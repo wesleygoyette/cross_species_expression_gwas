@@ -6,7 +6,7 @@ This directory contains the SQLite database file for the Regulatory Landscape AP
 
 The application uses **SQLite in production** with the following characteristics:
 
-- **Read-only mode**: The database is mounted as read-only in production to prevent accidental writes
+- **Read-only protection**: Django middleware enforces read-only operations to prevent accidental writes
 - **Single instance**: The application runs as a single Docker container, avoiding SQLite's multi-writer limitations
 - **Performance**: Excellent read performance for our use case
 
@@ -16,25 +16,23 @@ The application uses **SQLite in production** with the following characteristics
 
 **Production**: The database should be located at a path specified by `SQLITE_DB_PATH` environment variable. Currently on the production server:
 ```
-/home/wesley_goyette/regland.sqlite
+/home/wesley_goyette/data/regland.sqlite
 ```
 
 ### Docker Volume Mounting
 
-In production, the database is mounted as **read-only** to ensure data integrity:
+In production, the database directory is mounted with secure permissions:
 
 ```yaml
 volumes:
-  - ${SQLITE_DB_PATH:-./data}:/app/data:ro
+  - ${SQLITE_DB_PATH:-./database}:/app/data
 ```
-
-The `:ro` flag makes the mount read-only at the filesystem level.
 
 ### Read-Only Protection Layers
 
-1. **Filesystem level**: Docker volume mounted as read-only (`:ro`)
+1. **Django level**: `ReadOnlyDatabaseMiddleware` prevents write operations in production
 2. **SQLite level**: `PRAGMA query_only = ON` enforced by middleware in production
-3. **Django level**: `ReadOnlyDatabaseMiddleware` prevents write operations
+3. **Filesystem level**: File owned by container user with restricted permissions (600)
 
 ### Database Updates
 

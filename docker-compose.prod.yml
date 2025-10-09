@@ -11,7 +11,7 @@ services:
       - DATABASE_PATH=/app/data/regland.sqlite
     volumes:
       - backend_static:/app/staticfiles
-      - ${SQLITE_DB_PATH:-./database}:/app/data:ro
+      - ${SQLITE_DB_PATH:-./database}:/app/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s

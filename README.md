@@ -387,7 +387,7 @@ The deployment pipeline includes a simple but effective rollback mechanism:
 - Nginx-served static assets
 - Production build optimization
 - Reverse proxy configuration
-- SSL/TLS encryption with Let's Encrypt certificates
+- SSL/TLS encryption with Let's Encrypt certificates 
 
 ### SSL/TLS Security
 

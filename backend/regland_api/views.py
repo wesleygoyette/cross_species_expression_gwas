@@ -459,7 +459,7 @@ def gene_data_quality(request):
                 SELECT 
                     COUNT(*) as total_enhancers,
                     COUNT(e.tissue) as enhancers_with_tissue,
-                    COUNT(e.score) as enhancers_with_score,
+                    COUNT(CASE WHEN e.score IS NOT NULL AND e.score != '' THEN 1 END) as enhancers_with_score,
                     COUNT(CASE WHEN ec.class = 'conserved' THEN 1 END) as conserved_enhancers
                 FROM gene_to_enhancer gte
                 LEFT JOIN enhancers_all e ON gte.enh_id = e.enh_id

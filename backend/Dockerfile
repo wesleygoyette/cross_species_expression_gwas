@@ -29,14 +29,11 @@ USER appuser
 # Collect static files
 RUN python manage.py collectstatic --noinput --settings=regland_backend.settings
 
-# Create startup script with migrations and increased timeout
+# Create startup script without migrations (database is read-only in production)
 RUN echo '#!/bin/bash\n\
 set -e\n\
-echo "Waiting for database to be ready..."\n\
-sleep 5\n\
-echo "Running database migrations..."\n\
-python manage.py migrate --noinput\n\
-echo "Migrations completed successfully"\n\
+echo "Validating Django project..."\n\
+python manage.py check --settings=regland_backend.settings\n\
 echo "Starting gunicorn server..."\n\
 exec gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 300 --worker-class sync --max-requests 1000 --max-requests-jitter 100 --preload regland_backend.wsgi:application' > /app/start.sh && \
     chmod +x /app/start.sh

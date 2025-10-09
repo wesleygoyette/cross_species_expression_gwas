@@ -42,7 +42,7 @@ To update the database in production:
 
 1. **Stop the application**:
    ```bash
-   docker-compose -f docker-compose.prod.yml down
+   docker compose -f docker-compose.prod.yml down
    ```
 
 2. **Replace the database file** on the production server:
@@ -56,7 +56,7 @@ To update the database in production:
 
 3. **Restart the application**:
    ```bash
-   docker-compose -f docker-compose.prod.yml up -d
+   docker compose -f docker-compose.prod.yml up -d
    ```
 
 ### Why SQLite in Production?

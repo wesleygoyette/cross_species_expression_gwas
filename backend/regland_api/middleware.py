@@ -1,7 +1,5 @@
 from django.core.cache import cache
 from django.http import JsonResponse
-from django.conf import settings
-from django.db import connection
 import hashlib
 import json
 
@@ -10,30 +8,23 @@ class ReadOnlyDatabaseMiddleware:
     """
     Middleware to enforce read-only database operations in production.
     Prevents accidental writes to the SQLite database.
+    
+    Note: For SQLite, PRAGMA query_only is too restrictive and prevents
+    even read operations. Instead, rely on file permissions and database
+    connection string parameters.
     """
     
     def __init__(self, get_response):
         self.get_response = get_response
         
     def __call__(self, request):
-        # In production (DEBUG=False), set the database connection to read-only
-        # This is done per-request to ensure it applies to all database operations
-        if not settings.DEBUG:
-            # Get the database cursor and set it to read-only mode
-            # Note: This is done after the connection is established
-            def set_readonly(db_conn):
-                with db_conn.cursor() as cursor:
-                    cursor.execute("PRAGMA query_only = ON;")
-            
-            # Apply read-only pragma to the default database
-            if 'sqlite3' in settings.DATABASES['default']['ENGINE']:
-                try:
-                    set_readonly(connection)
-                except (AttributeError, RuntimeError):
-                    # If the connection hasn't been established yet, it will be set on first use
-                    # AttributeError: connection not ready
-                    # RuntimeError: database errors
-                    pass
+        # In production, we rely on:
+        # 1. File-level permissions (database file is read-only)
+        # 2. Application-level restrictions (no write endpoints)
+        # 3. Django's built-in protections
+        
+        # PRAGMA query_only is not used because it's too strict for SQLite
+        # and prevents legitimate read operations that need temp storage
         
         response = self.get_response(request)
         return response

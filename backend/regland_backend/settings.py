@@ -90,10 +90,17 @@ WSGI_APPLICATION = 'regland_backend.wsgi.application'
 
 # SQLite database configuration
 # In production, the database is mounted as read-only for data integrity
+DATABASE_PATH = os.getenv('DATABASE_PATH', str(BASE_DIR / '../database/regland.sqlite'))
+# If DATABASE_PATH is absolute, use it directly; otherwise, resolve relative to BASE_DIR
+if os.path.isabs(DATABASE_PATH):
+    DB_FILE = DATABASE_PATH
+else:
+    DB_FILE = BASE_DIR / Path(DATABASE_PATH)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / os.getenv('DATABASE_PATH', '../database/regland.sqlite'),
+        'NAME': DB_FILE,
         'OPTIONS': {
             # Set journal mode to WAL for better concurrent read performance
             'init_command': "PRAGMA query_only = OFF;",  # Allows migrations on startup

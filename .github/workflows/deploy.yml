@@ -157,19 +157,13 @@ jobs:
         docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
         docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
     
-    - name: Create production environment file
-      run: |
-        cat > .env << EOF
-        SECRET_KEY=${{ secrets.SECRET_KEY }}
-        DEBUG=False
-        ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
-        CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
-        EOF
-    
     - name: Deploy with Docker Compose
       run: |
         export BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
         export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
+        export SECRET_KEY=${{ secrets.SECRET_KEY }}
+        export ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
+        export CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
         export SQLITE_DB_PATH=${{ secrets.SQLITE_DB_PATH }}
         docker compose -f docker-compose.prod.yml up -d
     

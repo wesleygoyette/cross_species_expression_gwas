@@ -164,6 +164,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [],  # Disable authentication for public API
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50
 }
@@ -172,6 +173,9 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,https://crossgenome.site,https://www.crossgenome.site,http://crossgenome.site,http://www.crossgenome.site').split(',')
 
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF settings - exempt API endpoints
+CSRF_TRUSTED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,https://crossgenome.site,https://www.crossgenome.site,http://crossgenome.site,http://www.crossgenome.site').split(',')
 
 # Security settings for production
 if not DEBUG:

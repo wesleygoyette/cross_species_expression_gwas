@@ -81,7 +81,6 @@ Project Alpha/
 │   ├── requirements.txt       # Python dependencies
 │   └── manage.py             # Django management script
 ├── database/
-│   ├── init.sql              # Database initialization script
 │   ├── regland.sqlite        # Main RegLand SQLite database
 │   └── README.md            # Database setup instructions
 ├── frontend/

@@ -51,7 +51,7 @@ This is a modern web application for exploring evolutionary conservation of gene
 
 ### Backend
 - **Django 4.2+** with Django REST Framework
-- **SQLite** database (uses existing regland.sqlite)
+- **SQLite** database (production & development)
 - **Plotly** for interactive visualizations
 - **Pandas/NumPy** for data processing
 - **CORS headers** for cross-origin requests
@@ -67,7 +67,7 @@ This is a modern web application for exploring evolutionary conservation of gene
 - **GitHub Actions** for automated testing and deployment
 - **Docker & Docker Compose** for containerization and orchestration
 - **GitHub Container Registry** for image storage
-- **MySQL 8.0** for production database
+- **SQLite** for production database (read-only, mounted as volume)
 - **Self-hosted runners** for deployment infrastructure
 - **Nginx** for production web serving
 
@@ -271,9 +271,7 @@ Copy `backend/.env.example` to `backend/.env` and configure:
 - `SECRET_KEY`: Django secret key (⚠️ **Generate a new one for production!**)
 - `DEBUG`: Set to `True` for development, `False` for production
 - `ALLOWED_HOSTS`: Comma-separated list of allowed hostnames
-- `DATABASE_PATH`: Path to SQLite database for development
-- `USE_MYSQL`: Set to `True` to use MySQL instead of SQLite
-- `MYSQL_*`: MySQL connection settings (for production)
+- `DATABASE_PATH`: Path to SQLite database file
 - `CORS_ALLOWED_ORIGINS`: Allowed origins for CORS (frontend URLs)
 
 ### Frontend Environment Variables (frontend/.env)
@@ -285,12 +283,16 @@ Copy `frontend/.env.example` to `frontend/.env` and configure:
 
 ### Production Environment Variables
 
-Production deployments use GitHub Secrets to inject sensitive environment variables:
+Production deployments use environment variables for configuration. See `.env.production.example` for a template.
 
-- `SECRET_KEY`: Django secret key
-- `ALLOWED_HOSTS`: Production domain names
-- `CORS_ALLOWED_ORIGINS`: Production frontend URLs
-- `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`: Database credentials
+Key production variables:
+- `SECRET_KEY`: Django secret key (⚠️ **Must be set in production!**)
+- `ALLOWED_HOSTS`: Production domain names (comma-separated)
+- `CORS_ALLOWED_ORIGINS`: Production frontend URLs (comma-separated)
+- `SQLITE_DB_PATH`: Path on host machine where SQLite database is located
+- `DATABASE_PATH`: Path inside container where Django will access the database
+
+**Note**: The SQLite database is mounted as **read-only** in production to prevent accidental writes.
 
 ## API Endpoints
 
@@ -352,8 +354,8 @@ The CI/CD pipeline consists of three main stages:
 **Production Deployment**
 - Self-hosted runner deployment for main branch
 - Docker Compose orchestration with production configuration
-- MySQL 8.0 database with health checks
-- Environment variable management via GitHub Secrets
+- SQLite database mounted as read-only volume
+- Environment variable management via GitHub Secrets or .env file
 - Service health monitoring and automatic rollback capabilities
 
 ### Automatic Rollback System
@@ -370,11 +372,11 @@ The deployment pipeline includes a simple but effective rollback mechanism:
 
 ### Infrastructure Components
 
-**Database (MySQL 8.0)**
-- Persistent data volumes
-- Health check monitoring
-- Automatic schema initialization
-- Root and application user management
+**Database (SQLite)**
+- Read-only mounted volume for data integrity
+- Host-based file for easy updates
+- No separate database server required
+- Excellent performance for read-heavy workloads
 
 **Backend Service (Django)**
 - Production-optimized Docker container
@@ -414,17 +416,15 @@ The deployment pipeline includes a simple but effective rollback mechanism:
 
 ### Environment Configuration
 
-The pipeline uses GitHub Secrets for secure environment management:
+The pipeline uses GitHub Secrets or environment variables for configuration:
 
 ```bash
 SECRET_KEY              # Django secret key
-DEBUG                   # Debug mode setting
+DEBUG                   # Debug mode setting (False in production)
 ALLOWED_HOSTS           # Django allowed hosts
 CORS_ALLOWED_ORIGINS    # CORS configuration
-MYSQL_ROOT_PASSWORD     # Database root password
-MYSQL_DATABASE          # Database name
-MYSQL_USER              # Application database user
-MYSQL_PASSWORD          # Application database password
+SQLITE_DB_PATH          # Path to SQLite database on host
+DATABASE_PATH           # Path to database inside container
 ```
 
 ### Deployment Features
@@ -463,7 +463,7 @@ The pipeline automatically triggers on:
 - Local port exposure for debugging
 
 **Production** (`docker-compose.prod.yml`)  
-- MySQL database with persistence
+- SQLite database mounted as read-only volume
 - Production-optimized builds
 - Security-hardened configurations
 - Load balancer ready setup

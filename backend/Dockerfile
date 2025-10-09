@@ -13,9 +13,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     curl \
-    default-mysql-client \
-    pkg-config \
-    default-libmysqlclient-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

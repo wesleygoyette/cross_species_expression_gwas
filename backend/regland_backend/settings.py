@@ -61,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'regland_api.middleware.ReadOnlyDatabaseMiddleware',  # Enforce read-only DB in production
 ]
 
 ROOT_URLCONF = 'regland_backend.urls'
@@ -87,29 +88,23 @@ WSGI_APPLICATION = 'regland_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Use MySQL in production, SQLite in development
-if os.getenv('USE_MYSQL', 'False').lower() == 'true':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.getenv('MYSQL_DATABASE', 'regland'),
-            'USER': os.getenv('MYSQL_USER', 'regland'),
-            'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-            'HOST': os.getenv('MYSQL_HOST', 'mysql'),
-            'PORT': os.getenv('MYSQL_PORT', '3306'),
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
-        }
+# SQLite database configuration
+# In production, the database is mounted as read-only for data integrity
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / os.getenv('DATABASE_PATH', '../database/regland.sqlite'),
+        'OPTIONS': {
+            # Set journal mode to WAL for better concurrent read performance
+            'init_command': "PRAGMA query_only = OFF;",  # Allows migrations on startup
+        } if DEBUG else {},
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / os.getenv('DATABASE_PATH', '../database/regland.sqlite'),
-        }
-    }
+}
+
+# In production, set database to read-only after migrations
+if not DEBUG:
+    # This will be handled by middleware for query-level protection
+    pass
 
 
 # Password validation

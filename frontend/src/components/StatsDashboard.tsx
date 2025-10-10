@@ -33,7 +33,7 @@ export function StatsDashboard() {
     ];
 
     return (
-        <section className="py-16 px-4 bg-gradient-to-b from-background to-card/30">
+        <section className="py-16 px-4 bg-gradient-to-b from-card/30 to-background">
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl mb-3">Platform Statistics</h2>

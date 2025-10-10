@@ -568,7 +568,7 @@ export function APIDocumentation() {
     };
 
     return (
-        <section id="api" className="py-20 px-4 bg-gradient-to-b from-background to-secondary/20">
+        <section id="api" className="py-20 px-4 bg-gradient-to-b from-card/30 to-background">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-12 text-center">

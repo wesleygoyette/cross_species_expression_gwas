@@ -16,8 +16,8 @@ export default function App() {
                 <Hero />
                 <QuickGuide />
                 <StatsDashboard />
-                <GeneExplorer />
                 <GWASPortal />
+                <GeneExplorer />
                 <SpeciesTree />
                 <APIDocumentation />
             </main>

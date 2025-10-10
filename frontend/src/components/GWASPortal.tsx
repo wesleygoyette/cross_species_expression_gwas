@@ -141,7 +141,7 @@ export function GWASPortal() {
     }
 
     return (
-        <section id="gwas" className="py-20 px-4 bg-background">
+        <section id="gwas" className="py-20 px-4 bg-gradient-to-b from-card/30 to-background">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8">
                     <h2 className="text-3xl mb-3">GWAS Disease Portal</h2>

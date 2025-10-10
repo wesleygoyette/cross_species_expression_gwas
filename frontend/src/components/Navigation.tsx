@@ -34,8 +34,8 @@ export function Navigation() {
                         <div className="hidden md:flex items-center gap-8">
                             <a href="/" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Home</a>
                             <a href="#guide" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Getting Started</a>
-                            <a href="#gene-explorer" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Gene Explorer</a>
                             <a href="#gwas" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">GWAS Portal</a>
+                            <a href="#gene-explorer" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Gene Explorer</a>
                             <a href="#api" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">API</a>
                         </div>
 
@@ -82,18 +82,18 @@ export function Navigation() {
                                     Getting Started
                                 </a>
                                 <a
-                                    href="#gene-explorer"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
-                                    onClick={() => setMobileNavOpen(false)}
-                                >
-                                    Gene Explorer
-                                </a>
-                                <a
                                     href="#gwas"
                                     className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     GWAS Portal
+                                </a>
+                                <a
+                                    href="#gene-explorer"
+                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    onClick={() => setMobileNavOpen(false)}
+                                >
+                                    Gene Explorer
                                 </a>
                                 <a
                                     href="#api"

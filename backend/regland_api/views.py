@@ -184,6 +184,7 @@ def gwas_categories(request):
 def gwas_traits(request):
     """Get GWAS traits with aggregated statistics"""
     category = request.data.get('category')
+    limit = request.data.get('limit', None)  # Optional limit parameter
     
     with connection.cursor() as cursor:
         query = """
@@ -207,8 +208,12 @@ def gwas_traits(request):
         query += """
             GROUP BY g.trait, g.category
             ORDER BY snp_count DESC, min_pval ASC
-            LIMIT 100
         """
+        
+        # Only add limit if specified
+        if limit:
+            query += " LIMIT %s"
+            params.append(int(limit))
         
         cursor.execute(query, params)
         columns = [col[0] for col in cursor.description]
@@ -221,13 +226,13 @@ def gwas_traits(request):
 def trait_snps(request):
     """Get detailed SNP information for a specific trait"""
     trait = request.data.get('trait')
-    limit = int(request.data.get('limit', 100))
+    limit = request.data.get('limit')  # Optional limit, defaults to None (no limit)
     
     if not trait:
         return Response({'error': 'Trait is required'}, status=status.HTTP_400_BAD_REQUEST)
     
     with connection.cursor() as cursor:
-        cursor.execute("""
+        query = """
             SELECT DISTINCT
                 g.snp_id,
                 g.rsid,
@@ -245,8 +250,15 @@ def trait_snps(request):
             WHERE g.trait = %s
             GROUP BY g.snp_id, g.rsid, g.chrom, g.pos, g.trait, g.pval, g.category, g.source
             ORDER BY g.pval ASC
-            LIMIT %s
-        """, [trait, limit])
+        """
+        params = [trait]
+        
+        # Only add LIMIT if explicitly provided
+        if limit is not None:
+            query += " LIMIT %s"
+            params.append(int(limit))
+        
+        cursor.execute(query, params)
         
         columns = [col[0] for col in cursor.description]
         snps = [dict(zip(columns, row)) for row in cursor.fetchall()]

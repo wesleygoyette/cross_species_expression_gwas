@@ -202,20 +202,24 @@ export async function getGWASTraits(category?: string): Promise<{
 /**
  * Get detailed SNP information for a specific trait
  */
-export async function getTraitSNPs(trait: string, limit: number = 100): Promise<{
+export async function getTraitSNPs(trait: string, limit?: number): Promise<{
     snps: GWASSnp[];
     total_count: number;
 }> {
     const url = `${API_BASE_URL}${API_PREFIX}/gwas/trait-snps/`;
+    const body: any = { trait };
+    
+    // Only include limit if provided
+    if (limit !== undefined) {
+        body.limit = limit;
+    }
+    
     const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            trait,
-            limit
-        })
+        body: JSON.stringify(body)
     });
     return handleResponse<any>(response);
 }

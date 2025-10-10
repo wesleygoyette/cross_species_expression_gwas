@@ -1,159 +1,239 @@
-import { useState } from 'react';
-import { Search, TrendingUp, Network, ChevronRight, Filter, ArrowRight, Sparkles, Database, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, TrendingUp, Network, ChevronRight, Filter, ArrowRight, Sparkles, Database, Activity, Loader2, ChevronLeft, MoreHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+} from './ui/pagination';
+import { getGWASCategories, getGWASTraits, getTraitSNPs, type GWASSnp } from '../utils/api';
 
 interface Trait {
-    name: string;
-    snps: number;
-    genes: number;
+    trait: string;
+    snp_count: number;
+    gene_count: number;
     category: string;
-    pValue: string;
-    description?: string;
+    min_pval: number;
 }
+
+interface Category {
+    id: string;
+    name: string;
+    count: number;
+    color: string;
+    icon: any;
+}
+
+interface TraitSNP extends GWASSnp {
+    associated_genes?: string;
+}
+
 
 export function GWASPortal() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showBrowse, setShowBrowse] = useState(false);
     const [selectedTrait, setSelectedTrait] = useState<Trait | null>(null);
     const [selectedCategory, setSelectedCategory] = useState('all');
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [traits, setTraits] = useState<Trait[]>([]);
+    const [traitSnps, setTraitSnps] = useState<TraitSNP[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [snpsLoading, setSnpsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(5);
+    const [snpCurrentPage, setSnpCurrentPage] = useState(1);
+    const [snpItemsPerPage] = useState(5);
+    const [geneCurrentPage, setGeneCurrentPage] = useState(1);
+    const [geneItemsPerPage] = useState(5);
 
-    const categories = [
-        { id: 'all', name: 'All Traits', count: 790, color: '#00d4ff', icon: Database },
-        { id: 'metabolic', name: 'Metabolic', count: 156, color: '#00ff88', icon: Activity },
-        { id: 'neurological', name: 'Neurological', count: 98, color: '#ff8c42', icon: TrendingUp },
-        { id: 'immune', name: 'Immune', count: 124, color: '#a855f7', icon: Network },
-        { id: 'cardiovascular', name: 'Cardiovascular', count: 87, color: '#ec4899', icon: Activity },
-    ];
+    // Default category icons and colors
+    const getCategoryIcon = (category: string) => {
+        const categoryLower = category.toLowerCase();
+        if (categoryLower.includes('metabolic')) return Activity;
+        if (categoryLower.includes('neuro') || categoryLower.includes('brain')) return TrendingUp;
+        if (categoryLower.includes('immune') || categoryLower.includes('auto')) return Network;
+        if (categoryLower.includes('cardio') || categoryLower.includes('heart')) return Activity;
+        return Database;
+    };
 
-    const traits: Trait[] = [
-        {
-            name: 'Body Mass Index (BMI)',
-            snps: 2847,
-            genes: 412,
-            category: 'metabolic',
-            pValue: '5.2e-89',
-            description: 'Association between genetic variants and body mass index across diverse populations'
-        },
-        {
-            name: "Alzheimer's Disease",
-            snps: 1243,
-            genes: 156,
-            category: 'neurological',
-            pValue: '2.1e-76',
-            description: 'Late-onset Alzheimer\'s disease genetic risk factors and pathways'
-        },
-        {
-            name: 'Rheumatoid Arthritis',
-            snps: 987,
-            genes: 234,
-            category: 'immune',
-            pValue: '8.4e-65',
-            description: 'Autoimmune arthritis genetic susceptibility loci and immune pathway genes'
-        },
-        {
-            name: 'Type 2 Diabetes',
-            snps: 3421,
-            genes: 521,
-            category: 'metabolic',
-            pValue: '1.2e-92',
-            description: 'Insulin resistance and glucose metabolism genetic associations'
-        },
-        {
-            name: 'Coronary Artery Disease',
-            snps: 1876,
-            genes: 298,
-            category: 'cardiovascular',
-            pValue: '3.5e-71',
-            description: 'Atherosclerotic cardiovascular disease risk variants and lipid pathways'
-        },
-        {
-            name: 'Schizophrenia',
-            snps: 2145,
-            genes: 367,
-            category: 'neurological',
-            pValue: '6.8e-84',
-            description: 'Neurodevelopmental and synaptic function genes in schizophrenia risk'
-        },
-        {
-            name: "Crohn's Disease",
-            snps: 1567,
-            genes: 189,
-            category: 'immune',
-            pValue: '4.2e-58',
-            description: 'Inflammatory bowel disease susceptibility and immune response genes'
-        },
-        {
-            name: 'LDL Cholesterol',
-            snps: 2234,
-            genes: 334,
-            category: 'metabolic',
-            pValue: '1.9e-88',
-            description: 'Low-density lipoprotein cholesterol level genetic determinants'
-        },
-        {
-            name: "Parkinson's Disease",
-            snps: 1456,
-            genes: 203,
-            category: 'neurological',
-            pValue: '3.7e-68',
-            description: 'Progressive neurological disorder genetic risk factors'
-        },
-        {
-            name: 'Systemic Lupus',
-            snps: 892,
-            genes: 178,
-            category: 'immune',
-            pValue: '5.1e-54',
-            description: 'Autoimmune disease affecting multiple organ systems'
-        },
-        {
-            name: 'Hypertension',
-            snps: 1678,
-            genes: 267,
-            category: 'cardiovascular',
-            pValue: '2.8e-72',
-            description: 'Blood pressure regulation and cardiovascular risk variants'
-        },
-        {
-            name: 'Triglycerides',
-            snps: 1987,
-            genes: 289,
-            category: 'metabolic',
-            pValue: '4.3e-81',
-            description: 'Serum triglyceride level genetic associations and lipid metabolism'
-        },
-    ];
+    const getCategoryColor = (index: number) => {
+        const colors = ['#00d4ff', '#00ff88', '#ff8c42', '#a855f7', '#ec4899', '#f59e0b', '#10b981'];
+        return colors[index % colors.length];
+    };
+
+    // Load categories and traits on mount
+    useEffect(() => {
+        loadCategories();
+    }, []);
+
+    useEffect(() => {
+        if (showBrowse) {
+            loadTraits();
+        }
+    }, [showBrowse]);
+
+    // Load selected trait's SNPs
+    useEffect(() => {
+        if (selectedTrait) {
+            loadTraitSNPs(selectedTrait.trait);
+            setSnpCurrentPage(1); // Reset SNP pagination when trait changes
+            setGeneCurrentPage(1); // Reset gene pagination when trait changes
+        }
+    }, [selectedTrait]);
+
+    // Reset pagination when category changes or search query changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedCategory, searchQuery]);
+
+    const loadCategories = async () => {
+        try {
+            // Initialize with just "All Traits" - other categories will be populated when traits load
+            const categoryList: Category[] = [
+                {
+                    id: 'all',
+                    name: 'All Traits',
+                    count: 0, // Will be updated when traits load
+                    color: '#00d4ff',
+                    icon: Database
+                }
+            ];
+
+            setCategories(categoryList);
+        } catch (err) {
+            console.error('Error loading categories:', err);
+            setError('Failed to load categories');
+        }
+    };
+
+    const loadTraits = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            // Always load all traits regardless of selected category
+            // Category filtering will be done client-side
+            const response = await getGWASTraits(undefined);
+
+            if (response.traits && Array.isArray(response.traits)) {
+                // Normalize traits: set empty/null categories to "Unlabeled"
+                const normalizedTraits = response.traits.map(trait => ({
+                    ...trait,
+                    category: (trait.category && trait.category.trim() !== '') ? trait.category : 'Unlabeled'
+                }));
+
+                setTraits(normalizedTraits);
+
+                // Rebuild categories based on actual data
+                const categoryCounts = new Map<string, number>();
+                normalizedTraits.forEach(trait => {
+                    const cat = trait.category || 'Unlabeled';
+                    categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
+                });
+
+                const categoryList: Category[] = [
+                    {
+                        id: 'all',
+                        name: 'All Traits',
+                        count: normalizedTraits.length,
+                        color: '#00d4ff',
+                        icon: Database
+                    }
+                ];
+
+                // Add categories that actually exist in the data
+                Array.from(categoryCounts.entries())
+                    .sort((a, b) => b[1] - a[1]) // Sort by count descending
+                    .forEach(([categoryName, count], index) => {
+                        categoryList.push({
+                            id: categoryName,
+                            name: categoryName,
+                            count: count,
+                            color: categoryName === 'Unlabeled' ? '#64748b' : getCategoryColor(index + 1),
+                            icon: getCategoryIcon(categoryName)
+                        });
+                    });
+
+                setCategories(categoryList);
+            }
+        } catch (err) {
+            console.error('Error loading traits:', err);
+            setError('Failed to load traits');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadTraitSNPs = async (traitName: string) => {
+        setSnpsLoading(true);
+        setTraitSnps([]); // Clear SNPs when starting to load new ones
+        try {
+            const response = await getTraitSNPs(traitName); // Removed limit to get all SNPs
+            if (response.snps && Array.isArray(response.snps)) {
+                setTraitSnps(response.snps);
+            }
+        } catch (err) {
+            console.error('Error loading trait SNPs:', err);
+        } finally {
+            setSnpsLoading(false);
+        }
+    };
 
     const popularSearches = [
-        'Alzheimer\'s Disease',
-        'Type 2 Diabetes',
         'BMI',
+        'Type 2 Diabetes',
         'Coronary Artery Disease',
+        'COVID-19',
         'Schizophrenia',
         'Rheumatoid Arthritis'
     ];
 
     const filteredTraits = traits.filter(trait => {
         const matchesSearch = searchQuery === '' ||
-            trait.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            trait.category.toLowerCase().includes(searchQuery.toLowerCase());
+            trait.trait?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (trait.category && trait.category.toLowerCase().includes(searchQuery.toLowerCase()));
         const matchesCategory = selectedCategory === 'all' || trait.category === selectedCategory;
         return matchesSearch && matchesCategory;
+    });
+
+    // Get search-filtered traits (without category filter) for category counts
+    const searchFilteredTraits = traits.filter(trait => {
+        return searchQuery === '' ||
+            trait.trait?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (trait.category && trait.category.toLowerCase().includes(searchQuery.toLowerCase()));
     });
 
     const handleSearch = (query: string) => {
         if (query.trim() !== '') {
             setSearchQuery(query);
+            setSelectedCategory('all'); // Reset category filter to "all" when searching
+            setCurrentPage(1); // Reset to first page on search
             setShowBrowse(true);
+
+            // Scroll to the GWAS section after state updates
+            setTimeout(() => {
+                const gwasSection = document.getElementById('gwas');
+                if (gwasSection) {
+                    gwasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
         }
     };
 
     const handleTraitSelect = (trait: Trait) => {
         setSelectedTrait(trait);
+    };
+
+    const formatPValue = (pval: number | null | undefined): string => {
+        if (!pval) return 'N/A';
+        if (pval < 0.0001) {
+            return pval.toExponential(1);
+        }
+        return pval.toFixed(4);
     };
 
     // Simple search interface (initial state)
@@ -308,6 +388,11 @@ export function GWASPortal() {
                     <div className="flex flex-wrap gap-3">
                         {categories.map((cat) => {
                             const IconComponent = cat.icon;
+                            // Calculate count based on current search (not including category filter)
+                            const categoryCount = cat.id === 'all'
+                                ? searchFilteredTraits.length
+                                : searchFilteredTraits.filter(t => t.category === cat.id).length;
+
                             return (
                                 <Button
                                     key={cat.id}
@@ -315,13 +400,13 @@ export function GWASPortal() {
                                     onClick={() => setSelectedCategory(cat.id)}
                                     className={selectedCategory === cat.id ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'border-border hover:border-primary/30'}
                                 >
-                                    <IconComponent className="w-4 h-4 mr-2" />
+                                    {/* <IconComponent className="w-4 h-4 mr-2" /> */}
                                     {cat.name}
                                     <Badge
                                         variant="secondary"
                                         className={`ml-2 ${selectedCategory === cat.id ? 'bg-primary-foreground/20' : ''}`}
                                     >
-                                        {cat.count}
+                                        {categoryCount}
                                     </Badge>
                                 </Button>
                             );
@@ -329,17 +414,49 @@ export function GWASPortal() {
                     </div>
 
                     {/* Results Count */}
-                    <div className="mt-4 text-sm text-muted-foreground">
-                        {filteredTraits.length} {filteredTraits.length === 1 ? 'result' : 'results'} found
-                        {searchQuery && ` for "${searchQuery}"`}
-                    </div>
+                    {searchQuery && (
+                        <div className="mt-4 text-sm text-muted-foreground">
+                            {loading ? (
+                                <div className="flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Loading traits...
+                                </div>
+                            ) : (
+                                <>
+                                    {selectedCategory !== 'all' ? (
+                                        // Show specific message when search + category filter are active
+                                        <>
+                                            {filteredTraits.length} {filteredTraits.length === 1 ? 'result' : 'results'} for "{searchQuery}"
+                                            {' '}in {categories.find(c => c.id === selectedCategory)?.name || selectedCategory}
+                                            {' '}({searchFilteredTraits.length} total)
+                                        </>
+                                    ) : (
+                                        // Show simple message when only search is active
+                                        <>
+                                            {filteredTraits.length} {filteredTraits.length === 1 ? 'result' : 'results'} found for "{searchQuery}"
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="mt-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
+                            {error}
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid lg:grid-cols-3 gap-6">
                     {/* Traits List */}
                     <div className="lg:col-span-1 space-y-3">
-                        <div className="space-y-2 max-h-[800px] overflow-y-auto pr-2">
-                            {filteredTraits.length === 0 ? (
+                        <div className="space-y-2">
+                            {loading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                </div>
+                            ) : filteredTraits.length === 0 ? (
                                 <Card className="p-8 bg-card border-border text-center">
                                     <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4 px-3">
                                         <Search className="w-8 h-8 text-muted-foreground" />
@@ -360,40 +477,205 @@ export function GWASPortal() {
                                     </Button>
                                 </Card>
                             ) : (
-                                filteredTraits.map((trait) => (
-                                    <Card
-                                        key={trait.name}
-                                        className={`p-4 cursor-pointer transition-all hover:scale-[1.02] ${selectedTrait?.name === trait.name
-                                            ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/20'
-                                            : 'bg-card border-border hover:border-primary/30'
-                                            }`}
-                                        onClick={() => handleTraitSelect(trait)}
-                                    >
-                                        <div className="flex items-start justify-between mb-2">
-                                            <h4 className="text-sm flex-1">{trait.name}</h4>
-                                            <ChevronRight className={`w-4 h-4 flex-shrink-0 ml-2 transition-transform ${selectedTrait?.name === trait.name ? 'rotate-90' : ''
-                                                }`} />
-                                        </div>
+                                <>
+                                    {/* Calculate pagination */}
+                                    {(() => {
+                                        const totalPages = Math.ceil(filteredTraits.length / itemsPerPage);
+                                        const startIndex = (currentPage - 1) * itemsPerPage;
+                                        const endIndex = startIndex + itemsPerPage;
+                                        const paginatedTraits = filteredTraits.slice(startIndex, endIndex);
 
-                                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
-                                            <span>{trait.snps.toLocaleString()} SNPs</span>
-                                            <span>{trait.genes.toLocaleString()} genes</span>
-                                        </div>
+                                        return (
+                                            <>
+                                                {/* Traits List */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {paginatedTraits.map((trait) => (
+                                                        <Card
+                                                            key={trait.trait}
+                                                            className={`cursor-pointer transition-all hover:scale-[1.01] ${selectedTrait?.trait === trait.trait
+                                                                ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/20'
+                                                                : 'bg-card border-border hover:border-primary/30'
+                                                                }`}
+                                                            onClick={() => handleTraitSelect(trait)}
+                                                            style={{ padding: '16px 12px' }}
+                                                        >
+                                                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                                                <h4 style={{ fontSize: '13px', fontWeight: 500, lineHeight: '1.2', margin: 0, flex: 1 }}>{trait.trait}</h4>
+                                                                <ChevronRight
+                                                                    className={`transition-transform ${selectedTrait?.trait === trait.trait ? 'rotate-90' : ''}`}
+                                                                    style={{ width: '13px', height: '13px', flexShrink: 0, marginLeft: '6px', marginTop: '0px' }}
+                                                                />
+                                                            </div>
 
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className="text-xs" style={{
-                                                backgroundColor: `${categories.find(c => c.id === trait.category)?.color}15`,
-                                                borderColor: `${categories.find(c => c.id === trait.category)?.color}30`,
-                                                color: categories.find(c => c.id === trait.category)?.color
-                                            }}>
-                                                {trait.category}
-                                            </Badge>
-                                            <code className="text-xs text-[var(--genomic-green)] font-mono">
-                                                p={trait.pValue}
-                                            </code>
-                                        </div>
-                                    </Card>
-                                ))
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '11px', marginBottom: '0px' }} className="text-muted-foreground">
+                                                                <span>{trait.snp_count.toLocaleString()} SNPs</span>
+                                                                <span>{trait.gene_count.toLocaleString()} genes</span>
+                                                            </div>
+
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    style={{
+                                                                        backgroundColor: `${categories.find(c => c.id === trait.category)?.color}15`,
+                                                                        borderColor: `${categories.find(c => c.id === trait.category)?.color}30`,
+                                                                        color: categories.find(c => c.id === trait.category)?.color,
+                                                                        fontSize: '10px',
+                                                                        padding: '0px 5px',
+                                                                        height: '16px',
+                                                                        lineHeight: '16px',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center'
+                                                                    }}
+                                                                >
+                                                                    {trait.category}
+                                                                </Badge>
+                                                                <code style={{ fontSize: '10px', fontFamily: 'monospace' }} className="text-[var(--genomic-green)]">
+                                                                    p={formatPValue(trait.min_pval)}
+                                                                </code>
+                                                            </div>
+                                                        </Card>
+                                                    ))}
+                                                </div>
+
+                                                {/* Pagination */}
+                                                {totalPages > 1 && (
+                                                    <Pagination className="mt-4">
+                                                        <PaginationContent className="gap-1">
+                                                            <PaginationItem>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => {
+                                                                        if (currentPage > 1) {
+                                                                            setCurrentPage(currentPage - 1);
+                                                                        }
+                                                                    }}
+                                                                    disabled={currentPage === 1}
+                                                                    className="h-8 gap-1 px-2"
+                                                                >
+                                                                    <ChevronLeft className="h-4 w-4" />
+                                                                    <span className="hidden sm:inline">Previous</span>
+                                                                </Button>
+                                                            </PaginationItem>
+
+                                                            {/* Page Numbers */}
+                                                            {(() => {
+                                                                const pages = [];
+                                                                const maxVisiblePages = 5;
+
+                                                                if (totalPages <= maxVisiblePages) {
+                                                                    // Show all pages if total is small
+                                                                    for (let i = 1; i <= totalPages; i++) {
+                                                                        pages.push(
+                                                                            <PaginationItem key={i}>
+                                                                                <Button
+                                                                                    variant={currentPage === i ? "default" : "outline"}
+                                                                                    size="sm"
+                                                                                    onClick={() => setCurrentPage(i)}
+                                                                                    className="h-8 w-8 p-0"
+                                                                                >
+                                                                                    {i}
+                                                                                </Button>
+                                                                            </PaginationItem>
+                                                                        );
+                                                                    }
+                                                                } else {
+                                                                    // Show first page
+                                                                    pages.push(
+                                                                        <PaginationItem key={1}>
+                                                                            <Button
+                                                                                variant={currentPage === 1 ? "default" : "outline"}
+                                                                                size="sm"
+                                                                                onClick={() => setCurrentPage(1)}
+                                                                                className="h-8 w-8 p-0"
+                                                                            >
+                                                                                1
+                                                                            </Button>
+                                                                        </PaginationItem>
+                                                                    );
+
+                                                                    // Show ellipsis if needed
+                                                                    if (currentPage > 3) {
+                                                                        pages.push(
+                                                                            <PaginationItem key="ellipsis1">
+                                                                                <span className="flex h-8 w-8 items-center justify-center">
+                                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                                </span>
+                                                                            </PaginationItem>
+                                                                        );
+                                                                    }
+
+                                                                    // Show current page and neighbors
+                                                                    const start = Math.max(2, currentPage - 1);
+                                                                    const end = Math.min(totalPages - 1, currentPage + 1);
+
+                                                                    for (let i = start; i <= end; i++) {
+                                                                        pages.push(
+                                                                            <PaginationItem key={i}>
+                                                                                <Button
+                                                                                    variant={currentPage === i ? "default" : "outline"}
+                                                                                    size="sm"
+                                                                                    onClick={() => setCurrentPage(i)}
+                                                                                    className="h-8 w-8 p-0"
+                                                                                >
+                                                                                    {i}
+                                                                                </Button>
+                                                                            </PaginationItem>
+                                                                        );
+                                                                    }
+
+                                                                    // Show ellipsis if needed
+                                                                    if (currentPage < totalPages - 2) {
+                                                                        pages.push(
+                                                                            <PaginationItem key="ellipsis2">
+                                                                                <span className="flex h-8 w-8 items-center justify-center">
+                                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                                </span>
+                                                                            </PaginationItem>
+                                                                        );
+                                                                    }
+
+                                                                    // Show last page
+                                                                    pages.push(
+                                                                        <PaginationItem key={totalPages}>
+                                                                            <Button
+                                                                                variant={currentPage === totalPages ? "default" : "outline"}
+                                                                                size="sm"
+                                                                                onClick={() => setCurrentPage(totalPages)}
+                                                                                className="h-8 w-8 p-0"
+                                                                            >
+                                                                                {totalPages}
+                                                                            </Button>
+                                                                        </PaginationItem>
+                                                                    );
+                                                                }
+
+                                                                return pages;
+                                                            })()}
+
+                                                            <PaginationItem>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => {
+                                                                        if (currentPage < totalPages) {
+                                                                            setCurrentPage(currentPage + 1);
+                                                                        }
+                                                                    }}
+                                                                    disabled={currentPage === totalPages}
+                                                                    className="h-8 gap-1 px-2"
+                                                                >
+                                                                    <span className="hidden sm:inline">Next</span>
+                                                                    <ChevronRight className="h-4 w-4" />
+                                                                </Button>
+                                                            </PaginationItem>
+                                                        </PaginationContent>
+                                                    </Pagination>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
+                                </>
                             )}
                         </div>
                     </div>
@@ -403,24 +685,24 @@ export function GWASPortal() {
                         {selectedTrait ? (
                             <Card className="p-6 bg-card border-border">
                                 {/* Trait Header */}
-                                <div className="mb-6 pb-6 border-b border-border">
-                                    <h3 className="mb-3">{selectedTrait.name}</h3>
+                                <div className={`mb-6 ${traitSnps.some(snp => snp.associated_genes && snp.associated_genes.trim()) ? 'pb-6 border-b border-border' : ''}`}>
+                                    <h3 className="mb-3">{selectedTrait.trait}</h3>
                                     <p className="text-sm text-muted-foreground mb-4">
-                                        {selectedTrait.description}
+                                        Genetic associations for {selectedTrait.trait.toLowerCase()} across the genome
                                     </p>
 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <div>
                                             <div className="text-sm text-muted-foreground mb-1">SNPs</div>
-                                            <div className="text-xl text-primary">{selectedTrait.snps.toLocaleString()}</div>
+                                            <div className="text-xl text-primary">{selectedTrait.snp_count.toLocaleString()}</div>
                                         </div>
                                         <div>
                                             <div className="text-sm text-muted-foreground mb-1">Genes</div>
-                                            <div className="text-xl text-[var(--genomic-green)]">{selectedTrait.genes.toLocaleString()}</div>
+                                            <div className="text-xl text-[var(--genomic-green)]">{selectedTrait.gene_count.toLocaleString()}</div>
                                         </div>
                                         <div>
-                                            <div className="text-sm text-muted-foreground mb-1">P-value</div>
-                                            <code className="text-sm text-[var(--data-orange)] font-mono">{selectedTrait.pValue}</code>
+                                            <div className="text-sm text-muted-foreground mb-1">Min P-value</div>
+                                            <code className="text-sm text-[var(--data-orange)] font-mono">{formatPValue(selectedTrait.min_pval)}</code>
                                         </div>
                                         <div>
                                             <div className="text-sm text-muted-foreground mb-1">Category</div>
@@ -436,111 +718,435 @@ export function GWASPortal() {
                                 </div>
 
                                 {/* Tabs */}
-                                <Tabs defaultValue="snps" className="w-full">
-                                    <TabsList className="mb-6 bg-secondary/50 border border-border">
-                                        <TabsTrigger value="snps">SNP Mapping</TabsTrigger>
-                                        <TabsTrigger value="genes">Associated Genes</TabsTrigger>
-                                    </TabsList>
+                                {(() => {
+                                    // Check if there are any associated genes
+                                    const hasAssociatedGenes = traitSnps.some(snp => snp.associated_genes && snp.associated_genes.trim());
 
-                                    <TabsContent value="snps" className="space-y-4">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h4 className="text-foreground">Top SNP-to-Gene Associations</h4>
-                                            <Badge variant="secondary">
-                                                <TrendingUp className="w-3 h-3 mr-1" />
-                                                Genome-wide significant
-                                            </Badge>
-                                        </div>
+                                    // If no associated genes, don't render tabs at all
+                                    if (!hasAssociatedGenes) {
+                                        return null;
+                                    }
 
-                                        <div className="space-y-3">
-                                            {[
-                                                { snp: 'rs429358', chr: 'chr19', pos: '45411941', gene: 'APOE', effect: 'Missense', odds: '3.68' },
-                                                { snp: 'rs7412', chr: 'chr19', pos: '45412079', gene: 'APOE', effect: 'Missense', odds: '2.94' },
-                                                { snp: 'rs6265', chr: 'chr11', pos: '27679916', gene: 'BDNF', effect: 'Missense', odds: '1.42' },
-                                                { snp: 'rs1799971', chr: 'chr6', pos: '154039662', gene: 'OPRM1', effect: 'Synonymous', odds: '1.28' },
-                                                { snp: 'rs1800497', chr: 'chr11', pos: '113270828', gene: 'DRD2', effect: '3\' UTR', odds: '1.35' },
-                                            ].map((item) => (
-                                                <div
-                                                    key={item.snp}
-                                                    className="p-4 bg-secondary/30 rounded-lg border border-border hover:border-primary/30 transition-colors"
-                                                >
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
-                                                        <div>
-                                                            <p className="text-xs text-muted-foreground mb-1">SNP ID</p>
-                                                            <code className="text-primary font-mono">{item.snp}</code>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-muted-foreground mb-1">Location</p>
-                                                            <code className="text-xs font-mono text-foreground/80">{item.chr}:{item.pos}</code>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-muted-foreground mb-1">Gene</p>
-                                                            <span className="text-[var(--genomic-green)]">{item.gene}</span>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-muted-foreground mb-1">Odds Ratio</p>
-                                                            <span className="text-[var(--data-orange)]">{item.odds}</span>
-                                                        </div>
-                                                    </div>
-                                                    <Badge variant="outline" className="text-xs">{item.effect}</Badge>
+                                    return (
+                                        <Tabs defaultValue="snps" className="w-full">
+                                            <TabsList className="mb-6 bg-secondary/50 border border-border">
+                                                <TabsTrigger value="snps">SNP Mapping</TabsTrigger>
+                                                <TabsTrigger value="genes">Associated Genes</TabsTrigger>
+                                            </TabsList>
+
+                                            <TabsContent value="snps" className="space-y-4">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h4 className="text-foreground">Top SNP-to-Gene Associations</h4>
+                                                    <Badge variant="secondary">
+                                                        <TrendingUp className="w-3 h-3 mr-1" />
+                                                        Genome-wide significant
+                                                    </Badge>
                                                 </div>
-                                            ))}
-                                        </div>
 
-                                        <Button variant="outline" className="w-full mt-4 border-primary/30 hover:bg-primary/10">
-                                            <ArrowRight className="w-4 h-4 mr-2" />
-                                            View All {selectedTrait.snps.toLocaleString()} SNPs
-                                        </Button>
-                                    </TabsContent>
-
-                                    <TabsContent value="genes" className="space-y-4">
-                                        <h4 className="mb-4 text-foreground">Top Associated Genes</h4>
-                                        <div className="space-y-2">
-                                            {[
-                                                { gene: 'FTO', score: 94, snps: 234, traits: 12, function: 'RNA demethylase, obesity risk' },
-                                                { gene: 'MC4R', score: 89, snps: 187, traits: 8, function: 'Melanocortin receptor, energy balance' },
-                                                { gene: 'TMEM18', score: 86, snps: 156, traits: 6, function: 'Transmembrane protein, body weight' },
-                                                { gene: 'GNPDA2', score: 82, snps: 143, traits: 5, function: 'Glucosamine-6-phosphate, metabolism' },
-                                                { gene: 'BDNF', score: 78, snps: 129, traits: 9, function: 'Brain-derived neurotrophic factor' },
-                                                { gene: 'SEC16B', score: 75, snps: 118, traits: 4, function: 'ER to Golgi transport, obesity' },
-                                            ].map((item) => (
-                                                <div
-                                                    key={item.gene}
-                                                    className="p-4 bg-secondary/30 rounded-lg border border-border hover:border-primary/30 transition-colors"
-                                                >
-                                                    <div className="flex items-start justify-between mb-3">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-3 mb-1">
-                                                                <h4 className="text-sm text-primary">{item.gene}</h4>
-                                                                <Badge variant="secondary" className="text-xs">
-                                                                    Score: {item.score}
-                                                                </Badge>
-                                                            </div>
-                                                            <p className="text-xs text-muted-foreground">{item.function}</p>
-                                                        </div>
+                                                {snpsLoading ? (
+                                                    <div className="flex items-center justify-center py-12">
+                                                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
                                                     </div>
+                                                ) : traitSnps.length > 0 ? (
+                                                    <>
+                                                        {/* Calculate pagination */}
+                                                        {(() => {
+                                                            const totalPages = Math.ceil(traitSnps.length / snpItemsPerPage);
+                                                            const startIndex = (snpCurrentPage - 1) * snpItemsPerPage;
+                                                            const endIndex = startIndex + snpItemsPerPage;
+                                                            const paginatedSnps = traitSnps.slice(startIndex, endIndex);
 
-                                                    <div className="flex gap-4 text-xs text-muted-foreground mb-3">
-                                                        <span>{item.snps} SNPs</span>
-                                                        <span>·</span>
-                                                        <span>{item.traits} associated traits</span>
+                                                            return (
+                                                                <>
+                                                                    <div className="space-y-3">
+                                                                        {paginatedSnps.map((snp) => (
+                                                                            <div
+                                                                                key={snp.snp_id}
+                                                                                className="p-4 bg-secondary/30 rounded-lg border border-border hover:border-primary/30 transition-colors"
+                                                                            >
+                                                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
+                                                                                    <div>
+                                                                                        <p className="text-xs text-muted-foreground mb-1">SNP ID</p>
+                                                                                        <code className="text-primary font-mono">{snp.rsid || `SNP_${snp.snp_id}`}</code>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-xs text-muted-foreground mb-1">Location</p>
+                                                                                        <code className="text-xs font-mono text-foreground/80">{snp.chrom}:{snp.pos.toLocaleString()}</code>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-xs text-muted-foreground mb-1">Genes</p>
+                                                                                        <span className="text-[var(--genomic-green)] text-xs">
+                                                                                            {(() => {
+                                                                                                if (!snp.associated_genes) return 'N/A';
+                                                                                                const genes = snp.associated_genes.split(',');
+                                                                                                if (genes.length <= 3) {
+                                                                                                    return snp.associated_genes;
+                                                                                                }
+                                                                                                return `${genes.slice(0, 3).join(', ')} + ${genes.length - 3} more`;
+                                                                                            })()}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-xs text-muted-foreground mb-1">P-value</p>
+                                                                                        <code className="text-[var(--data-orange)] text-xs font-mono">{formatPValue(snp.pval)}</code>
+                                                                                    </div>
+                                                                                </div>
+                                                                                {snp.source && (
+                                                                                    <Badge variant="outline" className="text-xs">{snp.source}</Badge>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+
+                                                                    {/* Pagination */}
+                                                                    {totalPages > 1 && (
+                                                                        <Pagination className="mt-4">
+                                                                            <PaginationContent className="gap-1">
+                                                                                <PaginationItem>
+                                                                                    <Button
+                                                                                        variant="outline"
+                                                                                        size="sm"
+                                                                                        onClick={() => {
+                                                                                            if (snpCurrentPage > 1) {
+                                                                                                setSnpCurrentPage(snpCurrentPage - 1);
+                                                                                            }
+                                                                                        }}
+                                                                                        disabled={snpCurrentPage === 1}
+                                                                                        className="h-8 gap-1 px-2"
+                                                                                    >
+                                                                                        <ChevronLeft className="h-4 w-4" />
+                                                                                        <span className="hidden sm:inline">Previous</span>
+                                                                                    </Button>
+                                                                                </PaginationItem>
+
+                                                                                {/* Page Numbers */}
+                                                                                {(() => {
+                                                                                    const pages = [];
+                                                                                    const maxVisiblePages = 5;
+
+                                                                                    if (totalPages <= maxVisiblePages) {
+                                                                                        // Show all pages if total is small
+                                                                                        for (let i = 1; i <= totalPages; i++) {
+                                                                                            pages.push(
+                                                                                                <PaginationItem key={i}>
+                                                                                                    <Button
+                                                                                                        variant={snpCurrentPage === i ? "default" : "outline"}
+                                                                                                        size="sm"
+                                                                                                        onClick={() => setSnpCurrentPage(i)}
+                                                                                                        className="h-8 w-8 p-0"
+                                                                                                    >
+                                                                                                        {i}
+                                                                                                    </Button>
+                                                                                                </PaginationItem>
+                                                                                            );
+                                                                                        }
+                                                                                    } else {
+                                                                                        // Show first page
+                                                                                        pages.push(
+                                                                                            <PaginationItem key={1}>
+                                                                                                <Button
+                                                                                                    variant={snpCurrentPage === 1 ? "default" : "outline"}
+                                                                                                    size="sm"
+                                                                                                    onClick={() => setSnpCurrentPage(1)}
+                                                                                                    className="h-8 w-8 p-0"
+                                                                                                >
+                                                                                                    1
+                                                                                                </Button>
+                                                                                            </PaginationItem>
+                                                                                        );
+
+                                                                                        // Show ellipsis if needed
+                                                                                        if (snpCurrentPage > 3) {
+                                                                                            pages.push(
+                                                                                                <PaginationItem key="ellipsis-start">
+                                                                                                    <Button variant="ghost" size="sm" disabled className="h-8 w-8 p-0">
+                                                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                                                    </Button>
+                                                                                                </PaginationItem>
+                                                                                            );
+                                                                                        }
+
+                                                                                        // Show current page and neighbors
+                                                                                        const start = Math.max(2, snpCurrentPage - 1);
+                                                                                        const end = Math.min(totalPages - 1, snpCurrentPage + 1);
+
+                                                                                        for (let i = start; i <= end; i++) {
+                                                                                            pages.push(
+                                                                                                <PaginationItem key={i}>
+                                                                                                    <Button
+                                                                                                        variant={snpCurrentPage === i ? "default" : "outline"}
+                                                                                                        size="sm"
+                                                                                                        onClick={() => setSnpCurrentPage(i)}
+                                                                                                        className="h-8 w-8 p-0"
+                                                                                                    >
+                                                                                                        {i}
+                                                                                                    </Button>
+                                                                                                </PaginationItem>
+                                                                                            );
+                                                                                        }
+
+                                                                                        // Show ellipsis if needed
+                                                                                        if (snpCurrentPage < totalPages - 2) {
+                                                                                            pages.push(
+                                                                                                <PaginationItem key="ellipsis-end">
+                                                                                                    <Button variant="ghost" size="sm" disabled className="h-8 w-8 p-0">
+                                                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                                                    </Button>
+                                                                                                </PaginationItem>
+                                                                                            );
+                                                                                        }
+
+                                                                                        // Show last page
+                                                                                        pages.push(
+                                                                                            <PaginationItem key={totalPages}>
+                                                                                                <Button
+                                                                                                    variant={snpCurrentPage === totalPages ? "default" : "outline"}
+                                                                                                    size="sm"
+                                                                                                    onClick={() => setSnpCurrentPage(totalPages)}
+                                                                                                    className="h-8 w-8 p-0"
+                                                                                                >
+                                                                                                    {totalPages}
+                                                                                                </Button>
+                                                                                            </PaginationItem>
+                                                                                        );
+                                                                                    }
+
+                                                                                    return pages;
+                                                                                })()}
+
+                                                                                <PaginationItem>
+                                                                                    <Button
+                                                                                        variant="outline"
+                                                                                        size="sm"
+                                                                                        onClick={() => {
+                                                                                            if (snpCurrentPage < totalPages) {
+                                                                                                setSnpCurrentPage(snpCurrentPage + 1);
+                                                                                            }
+                                                                                        }}
+                                                                                        disabled={snpCurrentPage === totalPages}
+                                                                                        className="h-8 gap-1 px-2"
+                                                                                    >
+                                                                                        <span className="hidden sm:inline">Next</span>
+                                                                                        <ChevronRight className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                </PaginationItem>
+                                                                            </PaginationContent>
+                                                                        </Pagination>
+                                                                    )}
+                                                                </>
+                                                            );
+                                                        })()}
+                                                    </>
+                                                ) : (
+                                                    <div className="text-center py-8 text-muted-foreground">
+                                                        No SNP data available for this trait
                                                     </div>
+                                                )}
+                                            </TabsContent>
 
-                                                    <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-gradient-to-r from-primary via-[var(--genomic-green)] to-[var(--data-orange)] rounded-full transition-all duration-500"
-                                                            style={{ width: `${item.score}%` }}
-                                                        />
+                                            <TabsContent value="genes" className="space-y-4">
+                                                <h4 className="mb-4 text-foreground">Associated Genes</h4>
+                                                {snpsLoading ? (
+                                                    <div className="flex items-center justify-center py-12">
+                                                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
+                                                ) : traitSnps.length > 0 ? (
+                                                    <>
+                                                        {/* Calculate pagination */}
+                                                        {(() => {
+                                                            // Get unique genes
+                                                            const uniqueGenes = Array.from(new Set(
+                                                                traitSnps
+                                                                    .filter(snp => snp.associated_genes)
+                                                                    .flatMap(snp => snp.associated_genes?.split(',') || [])
+                                                                    .filter(g => g && g.trim())
+                                                            ));
 
-                                        <Button variant="outline" className="w-full mt-4 border-primary/30 hover:bg-primary/10">
-                                            <ArrowRight className="w-4 h-4 mr-2" />
-                                            View All {selectedTrait.genes.toLocaleString()} Associated Genes
-                                        </Button>
-                                    </TabsContent>
-                                </Tabs>
+                                                            const totalPages = Math.ceil(uniqueGenes.length / geneItemsPerPage);
+                                                            const startIndex = (geneCurrentPage - 1) * geneItemsPerPage;
+                                                            const endIndex = startIndex + geneItemsPerPage;
+                                                            const paginatedGenes = uniqueGenes.slice(startIndex, endIndex);
+
+                                                            return (
+                                                                <>
+                                                                    <div className="space-y-2">
+                                                                        {paginatedGenes.map((gene, index) => {
+                                                                            const geneSnps = traitSnps.filter(snp =>
+                                                                                snp.associated_genes?.includes(gene)
+                                                                            );
+                                                                            const minPval = Math.min(...geneSnps.map(s => s.pval || 1));
+
+                                                                            return (
+                                                                                <div
+                                                                                    key={gene}
+                                                                                    className="p-4 bg-secondary/30 rounded-lg border border-border hover:border-primary/30 transition-colors"
+                                                                                >
+                                                                                    <div className="flex items-start justify-between mb-3">
+                                                                                        <div className="flex-1">
+                                                                                            <div className="flex items-center gap-3 mb-1">
+                                                                                                <h4 className="text-sm text-primary">{gene}</h4>
+                                                                                                <Badge variant="secondary" className="text-xs">
+                                                                                                    {geneSnps.length} SNP{geneSnps.length !== 1 ? 's' : ''}
+                                                                                                </Badge>
+                                                                                            </div>
+                                                                                            <p className="text-xs text-muted-foreground">
+                                                                                                Min p-value: {formatPValue(minPval)}
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+
+                                                                    {/* Pagination */}
+                                                                    {totalPages > 1 && (
+                                                                        <Pagination className="mt-4">
+                                                                            <PaginationContent className="gap-1">
+                                                                                <PaginationItem>
+                                                                                    <Button
+                                                                                        variant="outline"
+                                                                                        size="sm"
+                                                                                        onClick={() => {
+                                                                                            if (geneCurrentPage > 1) {
+                                                                                                setGeneCurrentPage(geneCurrentPage - 1);
+                                                                                            }
+                                                                                        }}
+                                                                                        disabled={geneCurrentPage === 1}
+                                                                                        className="h-8 gap-1 px-2"
+                                                                                    >
+                                                                                        <ChevronLeft className="h-4 w-4" />
+                                                                                        <span className="hidden sm:inline">Previous</span>
+                                                                                    </Button>
+                                                                                </PaginationItem>
+
+                                                                                {/* Page Numbers */}
+                                                                                {(() => {
+                                                                                    const pages = [];
+                                                                                    const maxVisiblePages = 5;
+
+                                                                                    if (totalPages <= maxVisiblePages) {
+                                                                                        // Show all pages if total is small
+                                                                                        for (let i = 1; i <= totalPages; i++) {
+                                                                                            pages.push(
+                                                                                                <PaginationItem key={i}>
+                                                                                                    <Button
+                                                                                                        variant={geneCurrentPage === i ? "default" : "outline"}
+                                                                                                        size="sm"
+                                                                                                        onClick={() => setGeneCurrentPage(i)}
+                                                                                                        className="h-8 w-8 p-0"
+                                                                                                    >
+                                                                                                        {i}
+                                                                                                    </Button>
+                                                                                                </PaginationItem>
+                                                                                            );
+                                                                                        }
+                                                                                    } else {
+                                                                                        // Show first page
+                                                                                        pages.push(
+                                                                                            <PaginationItem key={1}>
+                                                                                                <Button
+                                                                                                    variant={geneCurrentPage === 1 ? "default" : "outline"}
+                                                                                                    size="sm"
+                                                                                                    onClick={() => setGeneCurrentPage(1)}
+                                                                                                    className="h-8 w-8 p-0"
+                                                                                                >
+                                                                                                    1
+                                                                                                </Button>
+                                                                                            </PaginationItem>
+                                                                                        );
+
+                                                                                        // Show ellipsis if needed
+                                                                                        if (geneCurrentPage > 3) {
+                                                                                            pages.push(
+                                                                                                <PaginationItem key="ellipsis-start">
+                                                                                                    <Button variant="ghost" size="sm" disabled className="h-8 w-8 p-0">
+                                                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                                                    </Button>
+                                                                                                </PaginationItem>
+                                                                                            );
+                                                                                        }
+
+                                                                                        // Show current page and neighbors
+                                                                                        const start = Math.max(2, geneCurrentPage - 1);
+                                                                                        const end = Math.min(totalPages - 1, geneCurrentPage + 1);
+
+                                                                                        for (let i = start; i <= end; i++) {
+                                                                                            pages.push(
+                                                                                                <PaginationItem key={i}>
+                                                                                                    <Button
+                                                                                                        variant={geneCurrentPage === i ? "default" : "outline"}
+                                                                                                        size="sm"
+                                                                                                        onClick={() => setGeneCurrentPage(i)}
+                                                                                                        className="h-8 w-8 p-0"
+                                                                                                    >
+                                                                                                        {i}
+                                                                                                    </Button>
+                                                                                                </PaginationItem>
+                                                                                            );
+                                                                                        }
+
+                                                                                        // Show ellipsis if needed
+                                                                                        if (geneCurrentPage < totalPages - 2) {
+                                                                                            pages.push(
+                                                                                                <PaginationItem key="ellipsis-end">
+                                                                                                    <Button variant="ghost" size="sm" disabled className="h-8 w-8 p-0">
+                                                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                                                    </Button>
+                                                                                                </PaginationItem>
+                                                                                            );
+                                                                                        }
+
+                                                                                        // Show last page
+                                                                                        pages.push(
+                                                                                            <PaginationItem key={totalPages}>
+                                                                                                <Button
+                                                                                                    variant={geneCurrentPage === totalPages ? "default" : "outline"}
+                                                                                                    size="sm"
+                                                                                                    onClick={() => setGeneCurrentPage(totalPages)}
+                                                                                                    className="h-8 w-8 p-0"
+                                                                                                >
+                                                                                                    {totalPages}
+                                                                                                </Button>
+                                                                                            </PaginationItem>
+                                                                                        );
+                                                                                    }
+
+                                                                                    return pages;
+                                                                                })()}
+
+                                                                                <PaginationItem>
+                                                                                    <Button
+                                                                                        variant="outline"
+                                                                                        size="sm"
+                                                                                        onClick={() => {
+                                                                                            if (geneCurrentPage < totalPages) {
+                                                                                                setGeneCurrentPage(geneCurrentPage + 1);
+                                                                                            }
+                                                                                        }}
+                                                                                        disabled={geneCurrentPage === totalPages}
+                                                                                        className="h-8 gap-1 px-2"
+                                                                                    >
+                                                                                        <span className="hidden sm:inline">Next</span>
+                                                                                        <ChevronRight className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                </PaginationItem>
+                                                                            </PaginationContent>
+                                                                        </Pagination>
+                                                                    )}
+                                                                </>
+                                                            );
+                                                        })()}
+                                                    </>
+                                                ) : (
+                                                    <div className="text-center py-8 text-muted-foreground">
+                                                        No gene associations available for this trait
+                                                    </div>
+                                                )}
+                                            </TabsContent>
+                                        </Tabs>
+                                    );
+                                })()}
                             </Card>
                         ) : (
                             <Card

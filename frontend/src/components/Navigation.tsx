@@ -1,4 +1,4 @@
-import { Search, Menu, X } from 'lucide-react';
+import { Search, Menu, X, Dna } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
 
@@ -19,24 +19,19 @@ export function Navigation() {
     return (
         <>
             <nav className="border-b border-border bg-card/50 backdrop-blur-lg sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-gradient-to-br from-[#00d4ff] to-[#00ff88] rounded" />
-                                <div>
-                                    <h1 className="text-[#00d4ff] tracking-tight">RegLand</h1>
-                                    <p className="text-xs text-muted-foreground" style={{ fontSize: '0.60rem' }}>Cross-Species Regulatory Genomics</p>
-                                </div>
-                            </div>
+                <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
+                    <div className="flex items-center justify-between" style={{ height: '80px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Dna style={{ width: '48px', height: '48px', color: '#a855f7', strokeWidth: '0.5', display: 'inline-block' }} />
+                            <h1 className="tracking-tight font-bold" style={{ fontSize: '48px', color: '#00d4ff', lineHeight: '1', display: 'inline-block' }}>Genexus</h1>
                         </div>
 
                         <div className="hidden md:flex items-center gap-8">
-                            <a href="/" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Home</a>
-                            <a href="#guide" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Getting Started</a>
-                            <a href="#gwas" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">GWAS Portal</a>
-                            <a href="#gene-explorer" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Gene Explorer</a>
-                            <a href="#api" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">API</a>
+                            <a href="/" className="text-sm font-medium transition-colors" style={{ color: '#00d4ff' }} onMouseEnter={(e) => e.currentTarget.style.color = '#f97316'} onMouseLeave={(e) => e.currentTarget.style.color = '#00d4ff'}>Home</a>
+                            <a href="#guide" className="text-sm font-medium transition-colors" style={{ color: '#00d4ff' }} onMouseEnter={(e) => e.currentTarget.style.color = '#f97316'} onMouseLeave={(e) => e.currentTarget.style.color = '#00d4ff'}>Getting Started</a>
+                            <a href="#gwas" className="text-sm font-medium transition-colors" style={{ color: '#00d4ff' }} onMouseEnter={(e) => e.currentTarget.style.color = '#f97316'} onMouseLeave={(e) => e.currentTarget.style.color = '#00d4ff'}>GWAS Portal</a>
+                            <a href="#gene-explorer" className="text-sm font-medium transition-colors" style={{ color: '#00d4ff' }} onMouseEnter={(e) => e.currentTarget.style.color = '#f97316'} onMouseLeave={(e) => e.currentTarget.style.color = '#00d4ff'}>Gene Explorer</a>
+                            <a href="#api" className="text-sm font-medium transition-colors" style={{ color: '#00d4ff' }} onMouseEnter={(e) => e.currentTarget.style.color = '#f97316'} onMouseLeave={(e) => e.currentTarget.style.color = '#00d4ff'}>API</a>
                         </div>
 
                         <Button
@@ -69,35 +64,90 @@ export function Navigation() {
                             <nav className="flex flex-col gap-2 p-6 flex-1">
                                 <a
                                     href="/"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium transition-all px-4 py-3 rounded-lg"
+                                    style={{ color: '#00d4ff', backgroundColor: 'transparent', border: '1px solid transparent' }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = '#f97316';
+                                        e.currentTarget.style.backgroundColor = 'rgba(249, 115, 22, 0.1)';
+                                        e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = '#00d4ff';
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'transparent';
+                                    }}
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     Home
                                 </a>
                                 <a
                                     href="#guide"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium transition-all px-4 py-3 rounded-lg"
+                                    style={{ color: '#00d4ff', backgroundColor: 'transparent', border: '1px solid transparent' }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = '#f97316';
+                                        e.currentTarget.style.backgroundColor = 'rgba(249, 115, 22, 0.1)';
+                                        e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = '#00d4ff';
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'transparent';
+                                    }}
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     Getting Started
                                 </a>
                                 <a
                                     href="#gwas"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium transition-all px-4 py-3 rounded-lg"
+                                    style={{ color: '#00d4ff', backgroundColor: 'transparent', border: '1px solid transparent' }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = '#f97316';
+                                        e.currentTarget.style.backgroundColor = 'rgba(249, 115, 22, 0.1)';
+                                        e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = '#00d4ff';
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'transparent';
+                                    }}
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     GWAS Portal
                                 </a>
                                 <a
                                     href="#gene-explorer"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium transition-all px-4 py-3 rounded-lg"
+                                    style={{ color: '#00d4ff', backgroundColor: 'transparent', border: '1px solid transparent' }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = '#f97316';
+                                        e.currentTarget.style.backgroundColor = 'rgba(249, 115, 22, 0.1)';
+                                        e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = '#00d4ff';
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'transparent';
+                                    }}
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     Gene Explorer
                                 </a>
                                 <a
                                     href="#api"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium transition-all px-4 py-3 rounded-lg"
+                                    style={{ color: '#00d4ff', backgroundColor: 'transparent', border: '1px solid transparent' }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = '#f97316';
+                                        e.currentTarget.style.backgroundColor = 'rgba(249, 115, 22, 0.1)';
+                                        e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = '#00d4ff';
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.borderColor = 'transparent';
+                                    }}
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     API

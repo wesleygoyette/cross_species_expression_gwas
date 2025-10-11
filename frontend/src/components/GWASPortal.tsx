@@ -239,19 +239,20 @@ export function GWASPortal() {
                 <div className="max-w-7xl mx-auto w-full">
                     {/* Hero Search */}
                     <div className="text-center mb-12">
+
+                        <h2
+                            className="mb-6 bg-gradient-to-r from-primary via-[var(--genomic-green)] to-primary bg-clip-text text-transparent"
+                            style={{ fontSize: '3.5rem', fontWeight: 700, lineHeight: 1.1 }}
+                        >
+                            GWAS Disease Portal
+                        </h2>
+
                         <Badge className="mb-6 bg-primary/10 text-primary border-primary/20 text-xs px-4 py-1.5">
                             26,404 Disease Variants · 790 Human Traits
                         </Badge>
 
-                        <h2 className="mb-6 text-3xl bg-gradient-to-r from-primary via-[var(--genomic-green)] to-primary bg-clip-text text-transparent">
-                            GWAS Disease Portal
-                        </h2>
-
-                        <p className="text-lg text-foreground/90 mb-3">
+                        <p className="text-lg text-foreground/90 mb-8">
                             Explore genetic associations across human diseases
-                        </p>
-                        <p className="text-muted-foreground mb-12 max-w-2xl mx-auto">
-                            Search for any disease, trait, gene, or SNP to discover genetic variants and their associations
                         </p>
 
                         {/* Main Search Bar */}
@@ -284,13 +285,12 @@ export function GWASPortal() {
                                     paddingTop: '20px',
                                     paddingBottom: '20px'
                                 }}
-                                autoFocus
                             />
                         </div>
 
                         {/* Popular Searches */}
                         <div className="mb-12">
-                            <p className="text-sm text-muted-foreground mb-4">Popular searches:</p>
+                            <p className="text-md text-muted-foreground mb-4">Popular searches:</p>
                             <div className="flex flex-wrap gap-2 justify-center">
                                 {popularSearches.map((search) => (
                                     <button
@@ -315,9 +315,10 @@ export function GWASPortal() {
                             size="lg"
                             variant="outline"
                             onClick={() => setShowBrowse(true)}
-                            className="border-primary/30 hover:bg-primary/10 hover:border-primary/50"
+                            className="border-primary/30 hover:bg-primary/10 hover:border-primary/50 text-[var(--data-orange)]"
+                            style={{ color: '#f06f12ff' }}
                         >
-                            <Filter className="w-5 h-5 mr-2" />
+                            <Filter className="w-5 h-5 mr-0" style={{ color: '#f97316' }} />
                             Browse All Diseases by Category
                         </Button>
                     </div>

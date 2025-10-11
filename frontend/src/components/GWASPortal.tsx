@@ -35,7 +35,7 @@ interface TraitSNP extends GWASSnp {
 
 export function GWASPortal() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeSearchQuery, setActiveSearchQuery] = useState(''); // The query actually being searched
+    const [activeSearchQuery, setActiveSearchQuery] = useState('');
     const [showBrowse, setShowBrowse] = useState(false);
     const [selectedTrait, setSelectedTrait] = useState<Trait | null>(null);
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -284,7 +284,6 @@ export function GWASPortal() {
                                     paddingTop: '20px',
                                     paddingBottom: '20px'
                                 }}
-                                autoFocus
                             />
                         </div>
 

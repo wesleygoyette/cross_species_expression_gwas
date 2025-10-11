@@ -35,6 +35,7 @@ interface TraitSNP extends GWASSnp {
 
 export function GWASPortal() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeSearchQuery, setActiveSearchQuery] = useState(''); // The query actually being searched
     const [showBrowse, setShowBrowse] = useState(false);
     const [selectedTrait, setSelectedTrait] = useState<Trait | null>(null);
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -75,7 +76,7 @@ export function GWASPortal() {
         if (showBrowse) {
             loadTraits();
         }
-    }, [showBrowse]);
+    }, [showBrowse, activeSearchQuery]);
 
     // Load selected trait's SNPs
     useEffect(() => {
@@ -86,10 +87,10 @@ export function GWASPortal() {
         }
     }, [selectedTrait]);
 
-    // Reset pagination when category changes or search query changes
+    // Reset pagination when category changes or active search query changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [selectedCategory, searchQuery]);
+    }, [selectedCategory, activeSearchQuery]);
 
     const loadCategories = async () => {
         try {
@@ -115,9 +116,9 @@ export function GWASPortal() {
         setLoading(true);
         setError(null);
         try {
-            // Always load all traits regardless of selected category
-            // Category filtering will be done client-side
-            const response = await getGWASTraits(undefined);
+            // Load traits with search query if provided
+            // The backend will handle filtering by search query (traits, genes, SNPs, categories)
+            const response = await getGWASTraits(undefined, activeSearchQuery);
 
             if (response.traits && Array.isArray(response.traits)) {
                 // Normalize traits: set empty/null categories to "Unlabeled"
@@ -193,23 +194,18 @@ export function GWASPortal() {
     ];
 
     const filteredTraits = traits.filter(trait => {
-        const matchesSearch = searchQuery === '' ||
-            trait.trait?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (trait.category && trait.category.toLowerCase().includes(searchQuery.toLowerCase()));
+        // Only apply category filter - search is handled by backend
         const matchesCategory = selectedCategory === 'all' || trait.category === selectedCategory;
-        return matchesSearch && matchesCategory;
+        return matchesCategory;
     });
 
-    // Get search-filtered traits (without category filter) for category counts
-    const searchFilteredTraits = traits.filter(trait => {
-        return searchQuery === '' ||
-            trait.trait?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (trait.category && trait.category.toLowerCase().includes(searchQuery.toLowerCase()));
-    });
+    // Since search is now handled by backend, searchFilteredTraits is same as traits
+    const searchFilteredTraits = traits;
 
     const handleSearch = (query: string) => {
         if (query.trim() !== '') {
             setSearchQuery(query);
+            setActiveSearchQuery(query); // Set the active search query to trigger backend search
             setSelectedCategory('all'); // Reset category filter to "all" when searching
             setCurrentPage(1); // Reset to first page on search
             setShowBrowse(true);
@@ -343,6 +339,7 @@ export function GWASPortal() {
                             onClick={() => {
                                 setShowBrowse(false);
                                 setSearchQuery('');
+                                setActiveSearchQuery('');
                                 setSelectedTrait(null);
                             }}
                             className="text-muted-foreground hover:text-foreground"
@@ -414,7 +411,7 @@ export function GWASPortal() {
                     </div>
 
                     {/* Results Count */}
-                    {searchQuery && (
+                    {activeSearchQuery && (
                         <div className="mt-4 text-sm text-muted-foreground">
                             {loading ? (
                                 <div className="flex items-center gap-2">
@@ -426,14 +423,14 @@ export function GWASPortal() {
                                     {selectedCategory !== 'all' ? (
                                         // Show specific message when search + category filter are active
                                         <>
-                                            {filteredTraits.length} {filteredTraits.length === 1 ? 'result' : 'results'} for "{searchQuery}"
+                                            {filteredTraits.length} {filteredTraits.length === 1 ? 'result' : 'results'} for "{activeSearchQuery}"
                                             {' '}in {categories.find(c => c.id === selectedCategory)?.name || selectedCategory}
                                             {' '}({searchFilteredTraits.length} total)
                                         </>
                                     ) : (
                                         // Show simple message when only search is active
                                         <>
-                                            {filteredTraits.length} {filteredTraits.length === 1 ? 'result' : 'results'} found for "{searchQuery}"
+                                            {filteredTraits.length} {filteredTraits.length === 1 ? 'result' : 'results'} found for "{activeSearchQuery}"
                                         </>
                                     )}
                                 </>
@@ -470,6 +467,7 @@ export function GWASPortal() {
                                         size="sm"
                                         onClick={() => {
                                             setSearchQuery('');
+                                            setActiveSearchQuery('');
                                             setSelectedCategory('all');
                                         }}
                                     >

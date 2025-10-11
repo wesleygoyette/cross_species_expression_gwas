@@ -182,9 +182,10 @@ def gwas_categories(request):
 
 @api_view(['POST'])
 def gwas_traits(request):
-    """Get GWAS traits with aggregated statistics"""
+    """Get GWAS traits with aggregated statistics, optionally filtered by search query"""
     category = request.data.get('category')
     limit = request.data.get('limit', None)  # Optional limit parameter
+    search_query = request.data.get('search', '').strip()  # Search parameter for traits, genes, or SNPs
     
     with connection.cursor() as cursor:
         query = """
@@ -197,13 +198,32 @@ def gwas_traits(request):
             FROM gwas_snps g
             LEFT JOIN snp_to_enhancer se ON g.snp_id = se.snp_id
             LEFT JOIN gene_to_enhancer ge ON se.enh_id = ge.enh_id
-            WHERE g.trait IS NOT NULL AND g.trait != ''
         """
         params = []
+        where_clauses = ["g.trait IS NOT NULL", "g.trait != ''"]
         
+        # Add search filter if provided
+        if search_query:
+            # Search in traits, rsids, categories, or associated genes
+            query += """
+                LEFT JOIN genes gn ON ge.gene_id = gn.gene_id
+            """
+            search_condition = """(
+                LOWER(g.trait) LIKE LOWER(%s) OR 
+                LOWER(g.rsid) LIKE LOWER(%s) OR 
+                LOWER(g.category) LIKE LOWER(%s) OR
+                LOWER(gn.symbol) LIKE LOWER(%s)
+            )"""
+            where_clauses.append(search_condition)
+            search_pattern = f'%{search_query}%'
+            params.extend([search_pattern, search_pattern, search_pattern, search_pattern])
+        
+        # Add category filter if provided
         if category and category != 'all':
-            query += " AND g.category = %s"
+            where_clauses.append("g.category = %s")
             params.append(category)
+        
+        query += " WHERE " + " AND ".join(where_clauses)
         
         query += """
             GROUP BY g.trait, g.category

@@ -235,7 +235,7 @@ export function GWASPortal() {
     // Simple search interface (initial state)
     if (!showBrowse) {
         return (
-            <section id="gwas" className="py-32 px-6 md:px-12 lg:px-16 bg-gradient-to-b from-background via-secondary/10 to-background min-h-screen flex items-center justify-center">
+            <section id="gwas" className="py-20 px-4 bg-gradient-to-b from-card/30 to-background min-h-screen flex items-center justify-center">
                 <div className="max-w-7xl mx-auto w-full">
                     {/* Hero Search */}
                     <div className="text-center mb-12">
@@ -243,7 +243,12 @@ export function GWASPortal() {
                             26,404 Disease Variants · 790 Human Traits
                         </Badge>
 
-                        <h2 className="mb-6 text-3xl bg-gradient-to-r from-primary via-[var(--genomic-green)] to-primary bg-clip-text text-transparent">
+                        <h2 className="text-4xl font-bold mb-4" style={{
+                            background: 'linear-gradient(135deg, #00d4ff 0%, #00ff88 50%, #ff8c42 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text'
+                        }}>
                             GWAS Disease Portal
                         </h2>
 
@@ -327,7 +332,7 @@ export function GWASPortal() {
 
     // Browse/Results view
     return (
-        <section id="gwas" className="py-16 px-6 md:px-12 lg:px-16 bg-background min-h-screen">
+        <section id="gwas" className="py-20 px-4 bg-gradient-to-b from-card/30 to-background min-h-screen">
             <div className="max-w-7xl mx-auto">
                 {/* Search Header */}
                 <div className="mb-8">

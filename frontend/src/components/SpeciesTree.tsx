@@ -6,7 +6,14 @@ export function SpeciesTree() {
         <section className="py-16 px-4 bg-gradient-to-b from-card/30 to-background">
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl mb-3">Evolutionary Conservation Framework</h2>
+                    <h2 className="text-4xl font-bold mb-4" style={{
+                        background: 'linear-gradient(135deg, #00d4ff 0%, #00ff88 50%, #ff8c42 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                    }}>
+                        Evolutionary Conservation Framework
+                    </h2>
                     <p className="text-muted-foreground">
                         Phylogenetic relationships and data coverage across mammalian species
                     </p>

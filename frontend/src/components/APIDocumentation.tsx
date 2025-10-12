@@ -575,7 +575,12 @@ export function APIDocumentation() {
                     <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
                         Developer Resources
                     </Badge>
-                    <h2 className="mb-4 bg-gradient-to-r from-primary via-[var(--genomic-green)] to-primary bg-clip-text text-transparent text-4xl">
+                    <h2 className="text-4xl font-bold mb-4" style={{
+                        background: 'linear-gradient(135deg, #00d4ff 0%, #00ff88 50%, #ff8c42 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                    }}>
                         API Documentation
                     </h2>
                     <p className="text-muted-foreground max-w-3xl mx-auto">

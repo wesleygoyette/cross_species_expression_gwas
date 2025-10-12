@@ -514,7 +514,14 @@ export function GeneExplorer() {
                         <Database className="w-3 h-3 mr-1" />
                         195,977 Genes
                     </Badge>
-                    <h2 className="text-4xl mb-3">Gene Explorer</h2>
+                    <h2 className="text-4xl font-bold mb-4" style={{
+                        background: 'linear-gradient(135deg, #00d4ff 0%, #00ff88 50%, #ff8c42 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                    }}>
+                        Gene Explorer
+                    </h2>
                     <p className="text-muted-foreground">
                         Search and analyze gene regulatory landscapes across species with cross-species conservation data
                     </p>
@@ -1135,17 +1142,17 @@ export function GeneExplorer() {
                                             </div>
 
                                             {/* Data Quality Warnings */}
-                                            {geneInfo?.dataQuality.score_availability !== 'high' && displayData && 
-                                             ((displayData.enhancersWithScore || 0) / displayData.enhancers) < 1 && (
-                                                <Alert className="bg-[var(--data-orange)]/10 border-[var(--data-orange)]/20">
-                                                    <AlertCircle className="h-4 w-4 text-[var(--data-orange)]" />
-                                                    <AlertDescription className="text-sm text-[var(--data-orange)]">
-                                                        <strong>Data Quality Notice:</strong> {displayData.enhancersWithScore || 0} of {displayData.enhancers} enhancers
-                                                        ({((((displayData.enhancersWithScore || 0) / displayData.enhancers) * 100) || 0).toFixed(0)}%) have activity scores.
-                                                        Faded enhancers indicate missing score data.
-                                                    </AlertDescription>
-                                                </Alert>
-                                            )}
+                                            {geneInfo?.dataQuality.score_availability !== 'high' && displayData &&
+                                                ((displayData.enhancersWithScore || 0) / displayData.enhancers) < 1 && (
+                                                    <Alert className="bg-[var(--data-orange)]/10 border-[var(--data-orange)]/20">
+                                                        <AlertCircle className="h-4 w-4 text-[var(--data-orange)]" />
+                                                        <AlertDescription className="text-sm text-[var(--data-orange)]">
+                                                            <strong>Data Quality Notice:</strong> {displayData.enhancersWithScore || 0} of {displayData.enhancers} enhancers
+                                                            ({((((displayData.enhancersWithScore || 0) / displayData.enhancers) * 100) || 0).toFixed(0)}%) have activity scores.
+                                                            Faded enhancers indicate missing score data.
+                                                        </AlertDescription>
+                                                    </Alert>
+                                                )}
 
                                             {selectedTissue === 'Liver' && (
                                                 <Alert className="bg-destructive/10 border-destructive/20">

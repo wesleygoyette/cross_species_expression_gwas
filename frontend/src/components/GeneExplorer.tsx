@@ -1381,8 +1381,12 @@ export function GeneExplorer() {
                                                     </div>
 
                                                     {(() => {
-                                                        // Filter SNPs based on search query
+                                                        // Filter SNPs based on search query and p-value validity
                                                         const filteredSnps = apiData.gwas_snps.filter((snp) => {
+                                                            // First filter out SNPs with 0 or invalid p-values
+                                                            if (!snp.pval || snp.pval <= 0) return false;
+
+                                                            // Then apply search query filter
                                                             if (!snpSearchQuery) return true;
                                                             const query = snpSearchQuery.toLowerCase();
                                                             return (
@@ -1466,7 +1470,7 @@ export function GeneExplorer() {
                                                                                                         {snp.category}
                                                                                                     </Badge>
                                                                                                 )}
-                                                                                                {snp.pval && (
+                                                                                                {snp.pval && snp.pval > 0 && (
                                                                                                     <Badge className="bg-[var(--genomic-green)]/10 text-[var(--genomic-green)] border-[var(--genomic-green)]/20 text-xs">
                                                                                                         p = {snp.pval.toExponential(1)}
                                                                                                     </Badge>
@@ -1500,7 +1504,7 @@ export function GeneExplorer() {
                                                                                                 </div>
 
                                                                                                 <div className="space-y-2">
-                                                                                                    {snp.pval && (
+                                                                                                    {snp.pval && snp.pval > 0 && (
                                                                                                         <div className="flex justify-between items-start">
                                                                                                             <span className="text-muted-foreground font-medium">P-value:</span>
                                                                                                             <span className="text-xs font-mono text-[var(--genomic-green)]">{snp.pval.toExponential(3)}</span>

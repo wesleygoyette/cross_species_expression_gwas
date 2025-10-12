@@ -1493,8 +1493,23 @@ export function GeneExplorer() {
                                     {selectedTab === 'gwas' && (
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-center mb-4">
-                                                <h3 className="text-foreground">GWAS SNP Associations</h3>
-                                                <Badge variant="secondary">{apiData?.gwas_snps.length || 0} SNPs</Badge>
+                                                <div className="flex items-center gap-2">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <h3 className="text-foreground cursor-help">GWAS SNP Associations</h3>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent className="max-w-sm">
+                                                                <p className="text-sm">
+                                                                    Genome-wide association study (GWAS) SNPs associated with traits or diseases.
+                                                                    This data is human-specific, while the genome tracks above show cross-species regulatory elements.
+                                                                </p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                    <Badge variant="outline" className="text-xs">Human Only</Badge>
+                                                </div>
+                                                <Badge variant="secondary">{apiData?.gwas_snps.length || 0} Human SNPs</Badge>
                                             </div>
 
                                             {loading ? (
@@ -1826,7 +1841,8 @@ export function GeneExplorer() {
                                                 <Alert className="bg-secondary/20 border-border">
                                                     <Info className="h-4 w-4 text-muted-foreground" />
                                                     <AlertDescription className="text-sm text-muted-foreground">
-                                                        No GWAS SNP associations found for {selectedGene} in the current database.
+                                                        No human GWAS SNP associations found for {selectedGene} in the current database.
+                                                        The genome tracks above may show regulatory elements from other species.
                                                     </AlertDescription>
                                                 </Alert>
                                             )}
@@ -1834,8 +1850,12 @@ export function GeneExplorer() {
                                             <Alert className="bg-primary/10 border-primary/20">
                                                 <Info className="h-4 w-4 text-primary" />
                                                 <AlertDescription className="text-sm text-primary">
-                                                    GWAS SNPs shown are within the ±1000kb region around the transcription start site (TSS) of {selectedGene}.
-                                                    P-values represent genome-wide association significance.
+                                                    <div className="space-y-1">
+                                                        <div>GWAS SNPs shown are within the ±1000kb region around the transcription start site (TSS) of {selectedGene}.</div>
+                                                        <div className="text-xs opacity-90">
+                                                            Note: This section shows human GWAS data only. The genome tracks above may display additional regulatory elements from mouse and pig species.
+                                                        </div>
+                                                    </div>
                                                 </AlertDescription>
                                             </Alert>
                                         </div>

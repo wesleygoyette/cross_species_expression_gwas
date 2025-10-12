@@ -194,7 +194,7 @@ def gwas_traits(request):
                 COUNT(DISTINCT g.snp_id) as snp_count,
                 COUNT(DISTINCT ge.gene_id) as gene_count,
                 g.category,
-                MIN(g.pval) as min_pval
+                MIN(CASE WHEN g.pval IS NOT NULL AND g.pval > 0 THEN g.pval END) as min_pval
             FROM gwas_snps g
             LEFT JOIN snp_to_enhancer se ON g.snp_id = se.snp_id
             LEFT JOIN gene_to_enhancer ge ON se.enh_id = ge.enh_id

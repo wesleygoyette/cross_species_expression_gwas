@@ -691,7 +691,7 @@ export function GWASPortal() {
                                 <div className={`mb-6 ${traitSnps.some(snp => snp.associated_genes && snp.associated_genes.trim()) ? 'pb-6 border-b border-border' : ''}`}>
                                     <h3 className="mb-3">{selectedTrait.trait}</h3>
                                     <p className="text-sm text-muted-foreground mb-4">
-                                        Genetic associations for {selectedTrait.trait.toLowerCase()} across the genome
+                                        Genome-wide association study results showing genetic variants associated with this trait
                                     </p>
 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

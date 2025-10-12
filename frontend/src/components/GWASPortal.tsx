@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, TrendingUp, Network, ChevronRight, Filter, ArrowRight, Sparkles, Database, Activity, Loader2, ChevronLeft, MoreHorizontal, ArrowDown } from 'lucide-react';
+import { Search, TrendingUp, Network, ChevronRight, Filter, ArrowRight, Sparkles, Database, Activity, Loader2, ChevronLeft, MoreHorizontal, ArrowDown, Copy, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -48,9 +48,10 @@ export function GWASPortal() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(5);
     const [snpCurrentPage, setSnpCurrentPage] = useState(1);
-    const [snpItemsPerPage] = useState(5);
+    const [snpItemsPerPage] = useState(10);
     const [geneCurrentPage, setGeneCurrentPage] = useState(1);
-    const [geneItemsPerPage] = useState(5);
+    const [geneItemsPerPage] = useState(10);
+    const [copiedGene, setCopiedGene] = useState<string | null>(null);
 
     // Default category icons and colors
     const getCategoryIcon = (category: string) => {
@@ -996,7 +997,7 @@ export function GWASPortal() {
                                                                                     key={gene}
                                                                                     className="p-4 bg-secondary/30 rounded-lg border border-border hover:border-primary/30 transition-colors"
                                                                                 >
-                                                                                    <div className="flex items-start justify-between mb-3">
+                                                                                    <div className="flex items-center justify-between">
                                                                                         <div className="flex-1">
                                                                                             <div className="flex items-center gap-3 mb-1">
                                                                                                 <h4 className="text-sm text-primary">{gene}</h4>
@@ -1008,6 +1009,44 @@ export function GWASPortal() {
                                                                                                 Min p-value: {formatPValue(minPval)}
                                                                                             </p>
                                                                                         </div>
+                                                                                        <Button
+                                                                                            variant="outline"
+                                                                                            size="sm"
+                                                                                            className={`gap-2 px-3 py-2 transition-all duration-200 ${copiedGene === gene
+                                                                                                ? 'bg-green-50 hover:bg-green-100 border-green-200 text-green-700'
+                                                                                                : 'hover:bg-muted/50 hover:border-primary/30'
+                                                                                                }`}
+                                                                                            onClick={async () => {
+                                                                                                try {
+                                                                                                    await navigator.clipboard.writeText(gene);
+                                                                                                    setCopiedGene(gene);
+                                                                                                    setTimeout(() => setCopiedGene(null), 2100);
+                                                                                                } catch (err) {
+                                                                                                    // Fallback for older browsers
+                                                                                                    const textArea = document.createElement('textarea');
+                                                                                                    textArea.value = gene;
+                                                                                                    document.body.appendChild(textArea);
+                                                                                                    textArea.select();
+                                                                                                    document.execCommand('copy');
+                                                                                                    document.body.removeChild(textArea);
+                                                                                                    setCopiedGene(gene);
+                                                                                                    setTimeout(() => setCopiedGene(null), 2000);
+                                                                                                }
+                                                                                            }}
+                                                                                            title={`Copy ${gene} to clipboard`}
+                                                                                        >
+                                                                                            {copiedGene === gene ? (
+                                                                                                <>
+                                                                                                    <Check className="h-4 w-4" />
+                                                                                                    <span className="text-xs font-medium">Copied!</span>
+                                                                                                </>
+                                                                                            ) : (
+                                                                                                <>
+                                                                                                    <Copy className="h-4 w-4" />
+                                                                                                    <span className="text-xs font-medium">Copy</span>
+                                                                                                </>
+                                                                                            )}
+                                                                                        </Button>
                                                                                     </div>
                                                                                 </div>
                                                                             );

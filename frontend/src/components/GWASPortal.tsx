@@ -48,9 +48,9 @@ export function GWASPortal() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(5);
     const [snpCurrentPage, setSnpCurrentPage] = useState(1);
-    const [snpItemsPerPage] = useState(10);
+    const [snpItemsPerPage] = useState(5);
     const [geneCurrentPage, setGeneCurrentPage] = useState(1);
-    const [geneItemsPerPage] = useState(10);
+    const [geneItemsPerPage] = useState(5);
     const [copiedGene, setCopiedGene] = useState<string | null>(null);
 
     // Default category icons and colors

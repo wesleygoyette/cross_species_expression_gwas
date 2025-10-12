@@ -878,7 +878,19 @@ export function GeneExplorer() {
                                                     <Info className="w-3 h-3" />
                                                     Use Up/Down arrows to zoom, Left/Right arrows to pan, Ctrl/Cmd + 0 to reset
                                                 </div>
-                                                {['Human', 'Mouse', 'Pig'].map((species, idx) => {
+                                                {['Human', 'Mouse', 'Pig']
+                                                    .sort((a, b) => {
+                                                        // Sort so tracks with data come first, then tracks without data
+                                                        const aData = a === 'Human' ? apiData : a === 'Mouse' ? mouseData : pigData;
+                                                        const bData = b === 'Human' ? apiData : b === 'Mouse' ? mouseData : pigData;
+                                                        const aHasData = aData !== null;
+                                                        const bHasData = bData !== null;
+                                                        
+                                                        if (aHasData && !bHasData) return -1;
+                                                        if (!aHasData && bHasData) return 1;
+                                                        return 0; // Keep original order for items with same data status
+                                                    })
+                                                    .map((species, idx) => {
                                                     // Map species to their respective data
                                                     const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
                                                     const hasData = speciesData !== null;
@@ -1183,7 +1195,19 @@ export function GeneExplorer() {
                                                 </div>
                                             ) : (
                                                 <div className="space-y-4">
-                                                    {['Human', 'Mouse', 'Pig'].map((species) => {
+                                                    {['Human', 'Mouse', 'Pig']
+                                                        .sort((a, b) => {
+                                                            // Sort so tracks with data come first, then tracks without data
+                                                            const aData = a === 'Human' ? apiData : a === 'Mouse' ? mouseData : pigData;
+                                                            const bData = b === 'Human' ? apiData : b === 'Mouse' ? mouseData : pigData;
+                                                            const aHasData = aData !== null;
+                                                            const bHasData = bData !== null;
+                                                            
+                                                            if (aHasData && !bHasData) return -1;
+                                                            if (!aHasData && bHasData) return 1;
+                                                            return 0; // Keep original order for items with same data status
+                                                        })
+                                                        .map((species) => {
                                                         // Map species to their respective data
                                                         const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
 

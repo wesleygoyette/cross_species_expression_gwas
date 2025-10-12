@@ -1141,15 +1141,15 @@ export function GeneExplorer() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-4 h-4 bg-[var(--data-orange)] rounded" />
-                                                    <span className="text-xs text-muted-foreground">Cis-regulatory element</span>
+                                                    <span className="text-xs text-muted-foreground">Enhancer</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-4 h-4 bg-[var(--genomic-green)]/60 rounded" />
-                                                    <span className="text-xs text-muted-foreground">CTCF binding site</span>
+                                                    <span className="text-xs text-muted-foreground">CTCF site</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-4 h-4 bg-destructive rounded-full" />
-                                                    <span className="text-xs text-muted-foreground">GWAS variant</span>
+                                                    <span className="text-xs text-muted-foreground">GWAS SNP</span>
                                                 </div>
                                             </div>
 

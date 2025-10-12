@@ -1264,7 +1264,7 @@ export function GeneExplorer() {
                                             )}
 
                                             {/* Legend: true gradient bar */}
-                                            <div className="flex items-center gap-4 text-xs">
+                                            <div className="flex items-center gap-4 text-xs mt-8">
                                                 <span className="text-muted-foreground">Low</span>
                                                 <div
                                                     className="flex-1 h-3 rounded"
@@ -1274,7 +1274,7 @@ export function GeneExplorer() {
                                                 />
                                                 <span className="text-muted-foreground">High Density</span>
                                             </div>
-                                            <Alert className="bg-primary/10 border-primary/20">
+                                            <Alert className="bg-primary/10 border-primary/20 mt-8">
                                                 <Info className="h-4 w-4 text-primary" />
                                                 <AlertDescription className="text-sm text-primary">
                                                     Heatmap showing spatial distribution of conserved enhancers across the gene region. Color intensity indicates enhancer density per genomic bin.
@@ -1341,7 +1341,7 @@ export function GeneExplorer() {
                                                 </Alert>
                                             )}
 
-                                            <Alert className="bg-primary/10 border-primary/20">
+                                            <Alert className="bg-primary/10 border-primary/20 mt-12">
                                                 <Info className="h-4 w-4 text-primary" />
                                                 <AlertDescription className="text-sm text-primary">
                                                     Expression values shown as Transcripts Per Million (TPM) from GTEx v8 RNA-seq data.

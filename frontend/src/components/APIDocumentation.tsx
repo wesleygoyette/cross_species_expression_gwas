@@ -38,25 +38,33 @@ const endpoints: Endpoint[] = [
     {
         method: 'GET',
         path: '/api/genes/search/',
-        description: 'Search genes by symbol with species filtering',
+        description: 'Search genes by symbol with species filtering (case-insensitive)',
         category: 'Gene & Region',
         parameters: [
-            { name: 'q', type: 'string', required: true, description: 'Gene symbol query (e.g., BDNF, FOXP2)' },
-            { name: 'species', type: 'string', required: false, description: 'Species ID filter (human_hg38, mouse_mm39, pig_susScr11)', default: 'human_hg38' },
+            { name: 'q', type: 'string', required: true, description: 'Gene symbol query (e.g., BDNF, FOXP2) - case insensitive' },
+            { name: 'species', type: 'string', required: false, description: 'Species ID filter (human_hg38, mouse_mm39, macaque_rheMac10, chicken_galGal6, pig_susScr11)', default: 'human_hg38' },
         ],
-        response: 'Array of gene objects with genomic coordinates',
+        response: 'Array of gene objects with genomic coordinates (max 10 results, ordered by exact match first)',
         example: {
             request: `curl -X GET "https://crossgenome.site/api/genes/search/?q=BDNF&species=human_hg38" \\
   -H "Accept: application/json"`,
             response: `{
   "genes": [
     {
-      "gene_id": "ENSG00000176697",
+      "gene_id": 1,
       "symbol": "BDNF",
       "species_id": "human_hg38",
       "chrom": "chr11",
-      "start": 27676440,
-      "end": 27743605
+      "start": 27600000,
+      "end": 27750000
+    },
+    {
+      "gene_id": 2323,
+      "symbol": "BDNF-AS",
+      "species_id": "human_hg38",
+      "chrom": "chr11",
+      "start": 27506830,
+      "end": 27698231
     }
   ]
 }`
@@ -65,82 +73,78 @@ const endpoints: Endpoint[] = [
     {
         method: 'GET',
         path: '/api/genes/region/',
-        description: 'Get comprehensive gene region data including enhancers, SNPs, and CTCF sites',
+        description: 'Get comprehensive gene region data including enhancers, GWAS SNPs, and CTCF sites',
         category: 'Gene & Region',
         parameters: [
-            { name: 'gene', type: 'string', required: true, description: 'Gene symbol', default: 'BDNF' },
+            { name: 'gene', type: 'string', required: true, description: 'Gene symbol (case-insensitive)', default: 'BDNF' },
             { name: 'species', type: 'string', required: false, description: 'Species identifier', default: 'human_hg38' },
-            { name: 'tissue', type: 'string', required: false, description: 'Tissue type (Brain, Heart, Liver)', default: 'Liver' },
+            { name: 'tissue', type: 'string', required: false, description: 'Tissue type for filtering enhancers', default: 'Liver' },
             { name: 'tss_kb', type: 'integer', required: false, description: 'Window size around TSS in kb', default: '100' },
-            { name: 'classes[]', type: 'array', required: false, description: 'Conservation classes to include (conserved, gained, lost, unlabeled)' },
+            { name: 'classes[]', type: 'array', required: false, description: 'Enhancer conservation classes to include (conserved, gained, lost, unlabeled)', default: '["conserved", "gained", "lost", "unlabeled"]' },
         ],
-        response: 'Comprehensive gene region data object',
+        response: 'Comprehensive gene region data with optimized queries',
         example: {
             request: `curl -X GET "https://crossgenome.site/api/genes/region/?gene=BDNF&species=human_hg38&tissue=Liver&tss_kb=100" \\
   -H "Accept: application/json"`,
             response: `{
   "gene": {
-    "gene_id": "ENSG00000176697",
+    "gene_id": 1,
     "symbol": "BDNF",
     "chrom": "chr11",
-    "start": 27676440,
-    "end": 27743605,
-    "tss": 27676440
+    "start": 27500000,
+    "end": 27700000,
+    "tss": 27600000,
+    "gene_start": 27600000,
+    "gene_end": 27750000
   },
-  "enhancers": [
-    {
-      "enh_id": "ENH_001",
-      "chrom": "chr11",
-      "start": 27650000,
-      "end": 27651000,
-      "tissue": "Liver",
-      "score": 0.89,
-      "class": "conserved"
-    }
-  ],
+  "enhancers": [],
   "gwas_snps": [
     {
-      "snp_id": "rs6265",
+      "snp_id": 19137,
       "rsid": "rs6265",
       "chrom": "chr11",
-      "pos": 27679916,
-      "trait": "Depression",
-      "pval": 1.2e-8,
-      "category": "Neurological"
-    }
-  ],
-  "ctcf_sites": [
+      "pos": 27658369,
+      "trait": "Body mass index",
+      "pval": 9.999999999999998e-123,
+      "category": "bmi",
+      "source": "GWAS (parquet)"
+    },
     {
-      "site_id": "CTCF_001",
+      "snp_id": 13527,
+      "rsid": "rs34379767",
       "chrom": "chr11",
-      "start": 27650000,
-      "end": 27650100
+      "pos": 27682662,
+      "trait": "Body mass index",
+      "pval": 7e-63,
+      "category": "bmi",
+      "source": "GWAS (parquet)"
     }
   ],
-  "ucsc_url": "https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr11:27676440-27743605"
+  "ctcf_sites": [],
+  "ucsc_url": "https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr11:27500000-27700000"
 }`
         }
     },
     {
         method: 'POST',
         path: '/api/genes/combined-data/',
-        description: 'Optimized single request for all gene data including visualizations',
+        description: 'Optimized single request for all gene data including visualizations, matrix data, and expression profiles',
         category: 'Gene & Region',
         body: [
-            { name: 'gene', type: 'string', required: false, description: 'Gene symbol', example: 'BDNF' },
+            { name: 'gene', type: 'string', required: false, description: 'Gene symbol (case-insensitive)', example: 'BDNF' },
             { name: 'species', type: 'string', required: false, description: 'Species identifier', example: 'human_hg38' },
-            { name: 'tissue', type: 'string', required: false, description: 'Tissue type', example: 'Liver' },
-            { name: 'tss_kb', type: 'integer', required: false, description: 'Window size in kb', example: '100' },
-            { name: 'classes', type: 'array', required: false, description: 'Conservation classes', example: '["conserved", "gained", "lost", "unlabeled"]' },
-            { name: 'nbins', type: 'integer', required: false, description: 'Number of bins for matrix', example: '30' },
-            { name: 'normalize_rows', type: 'boolean', required: false, description: 'Normalize matrix rows' },
-            { name: 'mark_tss', type: 'boolean', required: false, description: 'Mark TSS on plots' },
-            { name: 'stack_tracks', type: 'boolean', required: false, description: 'Stack genome tracks' },
-            { name: 'show_gene', type: 'boolean', required: false, description: 'Show gene track' },
-            { name: 'show_snps', type: 'boolean', required: false, description: 'Show GWAS SNPs' },
-            { name: 'log_expression', type: 'boolean', required: false, description: 'Use log scale for expression' },
+            { name: 'tissue', type: 'string', required: false, description: 'Tissue type for filtering', example: 'Liver' },
+            { name: 'tss_kb', type: 'integer', required: false, description: 'Window size around TSS in kb', example: '100' },
+            { name: 'classes', type: 'array', required: false, description: 'Enhancer conservation classes', example: '["conserved", "gained", "lost", "unlabeled"]' },
+            { name: 'nbins', type: 'integer', required: false, description: 'Number of bins for expression matrix', example: '30' },
+            { name: 'normalize_rows', type: 'boolean', required: false, description: 'Normalize matrix rows (default: false)', example: 'false' },
+            { name: 'mark_tss', type: 'boolean', required: false, description: 'Mark TSS on plots (default: true)', example: 'true' },
+            { name: 'stack_tracks', type: 'boolean', required: false, description: 'Stack genome tracks (default: true)', example: 'true' },
+            { name: 'show_gene', type: 'boolean', required: false, description: 'Show gene track (default: true)', example: 'true' },
+            { name: 'show_snps', type: 'boolean', required: false, description: 'Show GWAS SNPs (default: true)', example: 'true' },
+            { name: 'log_expression', type: 'boolean', required: false, description: 'Use log scale for expression (default: false)', example: 'false' },
         ],
-        response: 'Combined data object with region, matrix, tracks, and expression data',
+        response: 'Combined data object with region data, expression matrix, genome tracks, and expression profiles',
         example: {
             request: `curl -X POST "https://crossgenome.site/api/genes/combined-data/" \\
   -H "Content-Type: application/json" \\
@@ -160,23 +164,33 @@ const endpoints: Endpoint[] = [
   }'`,
             response: `{
   "regionData": {
-    "gene": {...},
-    "enhancers": [...],
-    "gwas_snps": [...],
-    "ctcf_sites": [...]
+    "gene": {
+      "gene_id": 1,
+      "symbol": "BDNF",
+      "chrom": "chr11",
+      "start": 27500000,
+      "end": 27700000,
+      "tss": 27600000
+    },
+    "enhancers": [],
+    "gwas_snps": [{"snp_id": 19137, "rsid": "rs6265", "chrom": "chr11", "pos": 27658369}],
+    "ctcf_sites": []
   },
   "matrixData": {
-    "matrix": [...],
-    "species": ["human_hg38", "mouse_mm39", "pig_susScr11"],
-    "bins": 30
+    "matrix": [[0.5, 1.2, 0.8], [1.0, 0.3, 0.9]],
+    "bins": 30,
+    "classes": ["conserved", "gained"],
+    "region_start": 27500000,
+    "region_end": 27700000
   },
   "tracksData": {
-    "data": [...],
-    "layout": {...}
+    "plot_data": {...},
+    "enhancer_count": 0,
+    "snp_count": 12
   },
   "exprData": {
-    "tissues": ["Brain", "Heart", "Liver"],
-    "values": [8.5, 2.1, 0.8]
+    "expression_data": [...],
+    "plot_data": {...}
   }
 }`
         }
@@ -223,10 +237,12 @@ const endpoints: Endpoint[] = [
   -H "Accept: application/json"`,
             response: `{
   "tissue_availability": "high",
-  "score_availability": "high",
-  "conservation_percent": 89.0,
+  "score_availability": "low",
+  "conservation_percent": 45.2,
   "available_species": [
+    "chicken_grcg7b",
     "human_hg38",
+    "macaque_rheMac10",
     "mouse_mm39",
     "pig_susScr11"
   ]
@@ -282,19 +298,19 @@ const endpoints: Endpoint[] = [
             response: `{
   "categories": [
     {
-      "id": "Metabolic",
-      "name": "Metabolic",
-      "count": 142
+      "id": "bmi",
+      "name": "bmi",
+      "count": 19363
     },
     {
-      "id": "Neurological",
-      "name": "Neurological",
-      "count": 98
+      "id": "inflammation",
+      "name": "inflammation",
+      "count": 4766
     },
     {
-      "id": "Immune",
-      "name": "Immune",
-      "count": 156
+      "id": "alcohol",
+      "name": "alcohol",
+      "count": 2267
     }
   ]
 }`
@@ -303,31 +319,43 @@ const endpoints: Endpoint[] = [
     {
         method: 'POST',
         path: '/api/gwas/traits/',
-        description: 'Get GWAS traits with aggregated statistics',
+        description: 'Get GWAS traits with aggregated statistics, filterable by category and searchable by trait, gene, or SNP',
         category: 'Data',
         body: [
             { name: 'category', type: 'string', required: false, description: 'Filter by category (or "all")', example: 'Neurological' },
+            { name: 'limit', type: 'integer', required: false, description: 'Maximum number of traits to return (optional)', example: '100' },
+            { name: 'search', type: 'string', required: false, description: 'Search by trait name, gene symbol, or SNP rsID', example: 'BDNF' },
         ],
-        response: 'List of traits with SNP and gene counts',
+        response: 'List of traits with SNP counts, gene counts, and minimum p-values',
         example: {
             request: `curl -X POST "https://crossgenome.site/api/gwas/traits/" \\
   -H "Content-Type: application/json" \\
-  -d '{"category": "Neurological"}'`,
+  -d '{
+    "category": "bmi",
+    "limit": 5
+  }'`,
             response: `{
   "traits": [
     {
-      "trait": "Alzheimer's Disease",
-      "snp_count": 245,
-      "gene_count": 89,
-      "category": "Neurological",
-      "min_pval": 1.2e-15
+      "trait": "Body mass index",
+      "snp_count": 7013,
+      "gene_count": 1408,
+      "category": "bmi",
+      "min_pval": 0.0
     },
     {
-      "trait": "Parkinson's Disease",
-      "snp_count": 178,
-      "gene_count": 67,
-      "category": "Neurological",
-      "min_pval": 3.4e-12
+      "trait": "Waist-to-hip ratio adjusted for BMI",
+      "snp_count": 3062,
+      "gene_count": 681,
+      "category": "bmi",
+      "min_pval": 1.9999999999999987e-293
+    },
+    {
+      "trait": "Hip circumference adjusted for BMI",
+      "snp_count": 2667,
+      "gene_count": 639,
+      "category": "bmi",
+      "min_pval": 9.999999999999998e-93
     }
   ]
 }`
@@ -336,94 +364,116 @@ const endpoints: Endpoint[] = [
     {
         method: 'POST',
         path: '/api/gwas/trait-snps/',
-        description: 'Get detailed SNP information for a specific trait',
+        description: 'Get detailed SNP information for a specific trait with associated genes',
         category: 'Data',
         body: [
-            { name: 'trait', type: 'string', required: true, description: 'GWAS trait name', example: "Alzheimer's Disease" },
-            { name: 'limit', type: 'integer', required: false, description: 'Maximum number of SNPs to return', example: '100' },
+            { name: 'trait', type: 'string', required: true, description: 'GWAS trait name', example: "Body mass index" },
+            { name: 'limit', type: 'integer', required: false, description: 'Maximum number of SNPs to return (optional, defaults to all)', example: '3' },
         ],
-        response: 'Detailed SNP information with associated genes',
+        response: 'Detailed SNP information with associated genes and total count',
         example: {
             request: `curl -X POST "https://crossgenome.site/api/gwas/trait-snps/" \\
   -H "Content-Type: application/json" \\
-  -d '{"trait": "Alzheimer'"'"'s Disease", "limit": 100}'`,
+  -d '{"trait": "Body mass index", "limit": 3}'`,
             response: `{
   "snps": [
     {
-      "snp_id": "chr19_45411941",
-      "rsid": "rs429358",
-      "chrom": "chr19",
-      "pos": 45411941,
-      "trait": "Alzheimer's Disease",
-      "pval": 1.2e-15,
-      "category": "Neurological",
-      "source": "GWAS Catalog",
-      "associated_genes": "APOE,APOC1"
+      "snp_id": 6803,
+      "rsid": "rs1421085",
+      "chrom": "chr16",
+      "pos": 53767042,
+      "trait": "Body mass index",
+      "pval": 0.0,
+      "category": "bmi",
+      "source": "GWAS (parquet)",
+      "associated_genes": null
+    },
+    {
+      "snp_id": 26310,
+      "rsid": "rs9937053",
+      "chrom": "chr16",
+      "pos": 53765595,
+      "trait": "Body mass index",
+      "pval": 0.0,
+      "category": "bmi",
+      "source": "GWAS (parquet)",
+      "associated_genes": null
+    },
+    {
+      "snp_id": 3273,
+      "rsid": "rs11642015",
+      "chrom": "chr16",
+      "pos": 53768582,
+      "trait": "Body mass index",
+      "pval": 4e-315,
+      "category": "bmi",
+      "source": "GWAS (parquet)",
+      "associated_genes": null
     }
   ],
-  "total_count": 245
+  "total_count": 7013
 }`
         }
     },
     {
         method: 'POST',
         path: '/api/analysis/ctcf/',
-        description: 'Advanced CTCF binding site and 3D chromatin domain analysis',
+        description: 'Advanced CTCF binding site and 3D chromatin domain analysis with visualization plots (limited to 1000 sites/enhancers for performance)',
         category: 'Analysis',
         body: [
-            { name: 'gene', type: 'string', required: true, description: 'Gene symbol', example: 'BDNF' },
-            { name: 'species', type: 'string', required: false, description: 'Species identifier', example: 'human_hg38' },
-            { name: 'link_mode', type: 'string', required: false, description: 'Linking strategy (gene, nearest)', example: 'gene' },
-            { name: 'tss_kb_ctcf', type: 'integer', required: false, description: 'CTCF search window in kb', example: '250' },
-            { name: 'domain_snap_tss', type: 'boolean', required: false, description: 'Snap domain to TSS', example: 'true' },
-            { name: 'ctcf_cons_groups', type: 'array', required: false, description: 'CTCF conservation groups', example: '["conserved", "human_specific"]' },
-            { name: 'enh_cons_groups', type: 'array', required: false, description: 'Enhancer conservation groups', example: '["conserved", "gained", "lost"]' },
-            { name: 'ctcf_dist_cap_kb', type: 'integer', required: false, description: 'Distance cap for CTCF analysis', example: '250' },
+            { name: 'gene', type: 'string', required: true, description: 'Gene symbol (case-insensitive)', example: 'BDNF' },
+            { name: 'species', type: 'string', required: false, description: 'Species identifier (default: human_hg38)', example: 'human_hg38' },
+            { name: 'link_mode', type: 'string', required: false, description: 'Linking strategy (gene, nearest) (default: gene)', example: 'gene' },
+            { name: 'tss_kb_ctcf', type: 'integer', required: false, description: 'CTCF search window around TSS in kb (default: 250)', example: '250' },
+            { name: 'domain_snap_tss', type: 'boolean', required: false, description: 'Snap domain boundaries to TSS (default: true)', example: 'true' },
+            { name: 'ctcf_cons_groups', type: 'array', required: false, description: 'CTCF conservation groups to include (default: ["conserved", "human_specific"])', example: '["conserved", "human_specific"]' },
+            { name: 'enh_cons_groups', type: 'array', required: false, description: 'Enhancer conservation groups to include (default: ["conserved", "gained", "lost", "unlabeled"])', example: '["conserved", "gained", "lost", "unlabeled"]' },
+            { name: 'ctcf_dist_cap_kb', type: 'integer', required: false, description: 'Maximum distance cap for CTCF analysis in kb (default: 250)', example: '250' },
         ],
-        response: '3D chromatin structure analysis results with visualizations',
+        response: '3D chromatin structure analysis with domain region, CTCF sites, enhancers, GWAS SNPs, and multiple visualization plots',
         example: {
             request: `curl -X POST "https://crossgenome.site/api/analysis/ctcf/" \\
   -H "Content-Type: application/json" \\
   -d '{
     "gene": "BDNF",
     "species": "human_hg38",
-    "tss_kb_ctcf": 250,
-    "link_mode": "gene",
-    "domain_snap_tss": true,
-    "ctcf_cons_groups": ["conserved", "human_specific"],
-    "enh_cons_groups": ["conserved", "gained", "lost", "unlabeled"]
+    "tss_kb_ctcf": 100
   }'`,
             response: `{
   "domain_region": {
     "chrom": "chr11",
-    "start": 27426440,
-    "end": 27993605,
-    "gene_symbol": "BDNF"
+    "start": 27500000,
+    "end": 27700000,
+    "gene_symbol": "BDNF",
+    "tss": 27600000
   },
   "ctcf_sites": [
     {
-      "site_id": "CTCF_001",
+      "site_id": 12345,
       "chrom": "chr11",
-      "start": 27450000,
-      "end": 27450100,
-      "conservation": "conserved",
-      "score": 8.5
+      "start": 27550000,
+      "end": 27550100,
+      "score": 850.5
     }
   ],
   "enhancers": [
     {
-      "enh_id": "ENH_001",
+      "enh_id": 67890,
       "chrom": "chr11",
-      "start": 27650000,
-      "end": 27651000,
+      "start": 27600000,
+      "end": 27601000,
+      "tissue": "Brain",
+      "score": 0.85,
       "class": "conserved"
     }
   ],
   "gwas_snps": [
     {
-      "snp_id": "rs6265",
+      "snp_id": 19137,
       "rsid": "rs6265",
-      "pos": 27679916
+      "chrom": "chr11",
+      "pos": 27658369,
+      "trait": "Body mass index"
     }
   ],
   "tracks_plot": {
@@ -437,7 +487,6 @@ const endpoints: Endpoint[] = [
   "enhancers_plot": {
     "data": [...],
     "layout": {...}
-  },
   "expression_plot": {
     "data": [...],
     "layout": {...}
@@ -451,9 +500,9 @@ const endpoints: Endpoint[] = [
     "data": [...]
   },
   "stats": {
-    "ctcf_count": 12,
-    "enhancer_count": 45,
-    "gwas_snp_count": 8
+    "ctcf_count": 4,
+    "enhancer_count": 160,
+    "gwas_snp_count": 1
   }
 }`
         }
@@ -461,10 +510,10 @@ const endpoints: Endpoint[] = [
     {
         method: 'GET',
         path: '/api/health/',
-        description: 'API health check and database connectivity status',
+        description: 'API health check with database connectivity verification',
         category: 'Utility',
         parameters: [],
-        response: 'System health status',
+        response: 'System health status with database connection test',
         example: {
             request: `curl -X GET "https://crossgenome.site/api/health/" \\
   -H "Accept: application/json"`,

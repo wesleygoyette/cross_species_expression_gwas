@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, TrendingUp, Network, ChevronRight, Filter, ArrowRight, Sparkles, Database, Activity, Loader2, ChevronLeft, MoreHorizontal } from 'lucide-react';
+import { Search, TrendingUp, Network, ChevronRight, Filter, ArrowRight, Sparkles, Database, Activity, Loader2, ChevronLeft, MoreHorizontal, ArrowDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -949,7 +949,13 @@ export function GWASPortal() {
                                             </TabsContent>
 
                                             <TabsContent value="genes" className="space-y-4">
-                                                <h4 className="mb-4 text-foreground">Associated Genes</h4>
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h4 className="text-foreground">Associated Genes</h4>
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        <ArrowDown className="w-3 h-3 mr-1" />
+                                                        Sorted by min p-value
+                                                    </Badge>
+                                                </div>
                                                 {snpsLoading ? (
                                                     <div className="flex items-center justify-center py-12">
                                                         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -958,27 +964,32 @@ export function GWASPortal() {
                                                     <>
                                                         {/* Calculate pagination */}
                                                         {(() => {
-                                                            // Get unique genes
-                                                            const uniqueGenes = Array.from(new Set(
+                                                            // Get unique genes with their minimum p-values and sort by p-value
+                                                            const geneData = Array.from(new Set(
                                                                 traitSnps
                                                                     .filter(snp => snp.associated_genes)
                                                                     .flatMap(snp => snp.associated_genes?.split(',') || [])
                                                                     .filter(g => g && g.trim())
-                                                            ));
+                                                            )).map(gene => {
+                                                                const geneSnps = traitSnps.filter(snp =>
+                                                                    snp.associated_genes?.includes(gene)
+                                                                );
+                                                                const minPval = Math.min(...geneSnps.map(s => s.pval || 1));
+                                                                return { gene, minPval, geneSnps };
+                                                            }).sort((a, b) => a.minPval - b.minPval);
 
-                                                            const totalPages = Math.ceil(uniqueGenes.length / geneItemsPerPage);
+                                                            const uniqueGenes = geneData.map(item => item.gene);
+
+                                                            const totalPages = Math.ceil(geneData.length / geneItemsPerPage);
                                                             const startIndex = (geneCurrentPage - 1) * geneItemsPerPage;
                                                             const endIndex = startIndex + geneItemsPerPage;
-                                                            const paginatedGenes = uniqueGenes.slice(startIndex, endIndex);
+                                                            const paginatedGeneData = geneData.slice(startIndex, endIndex);
 
                                                             return (
                                                                 <>
                                                                     <div className="space-y-2">
-                                                                        {paginatedGenes.map((gene, index) => {
-                                                                            const geneSnps = traitSnps.filter(snp =>
-                                                                                snp.associated_genes?.includes(gene)
-                                                                            );
-                                                                            const minPval = Math.min(...geneSnps.map(s => s.pval || 1));
+                                                                        {paginatedGeneData.map((geneItem, index) => {
+                                                                            const { gene, minPval, geneSnps } = geneItem;
 
                                                                             return (
                                                                                 <div

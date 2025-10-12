@@ -176,7 +176,7 @@ export async function getGWASCategories(): Promise<{ categories: string[] }> {
 /**
  * Get GWAS traits with their SNP information
  * This aggregates data from the gwas_snps table
- * Supports searching by trait name, gene symbol, SNP rsid, or category
+ * Supports searching by trait name, SNP rsid, or category
  */
 export async function getGWASTraits(category?: string, searchQuery?: string): Promise<{
     traits: Array<{

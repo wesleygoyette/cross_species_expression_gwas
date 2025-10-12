@@ -118,7 +118,7 @@ export function GWASPortal() {
         setError(null);
         try {
             // Load traits with search query if provided
-            // The backend will handle filtering by search query (traits, genes, SNPs, categories)
+            // The backend will handle filtering by search query (traits, SNPs, categories)
             const response = await getGWASTraits(undefined, activeSearchQuery);
 
             if (response.traits && Array.isArray(response.traits)) {
@@ -257,7 +257,7 @@ export function GWASPortal() {
                             Explore genetic associations across human diseases
                         </p>
                         <p className="text-muted-foreground mb-12 max-w-2xl mx-auto">
-                            Search for any disease, trait, gene, or SNP to discover genetic variants and their associations
+                            Search for any disease, trait, or SNP to discover genetic variants and their associations
                         </p>
 
                         {/* Main Search Bar */}
@@ -275,7 +275,7 @@ export function GWASPortal() {
                                 }}
                             />
                             <Input
-                                placeholder="Search diseases, traits, genes, or SNPs..."
+                                placeholder="Search diseases, traits, or SNPs..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onKeyDown={(e) => {
@@ -368,7 +368,7 @@ export function GWASPortal() {
                             }}
                         />
                         <Input
-                            placeholder="Search diseases, traits, genes, or SNPs..."
+                            placeholder="Search diseases, traits, or SNPs..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={(e) => {

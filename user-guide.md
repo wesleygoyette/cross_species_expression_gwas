@@ -23,7 +23,7 @@ CrossGenome.site integrates genomic data to help researchers understand how gene
    - Examine conservation scores and data quality metrics
 
 2. **GWAS Portal**: Discover disease and trait associations
-   - Search by disease name, trait, gene, or SNP ID
+   - Search by disease name, trait, or SNP ID
    - Browse results by category (Cardiovascular, Neurological, Metabolic, etc.)
    - Link findings back to Gene Explorer for detailed analysis
 

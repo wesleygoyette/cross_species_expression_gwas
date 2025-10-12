@@ -319,12 +319,12 @@ const endpoints: Endpoint[] = [
     {
         method: 'POST',
         path: '/api/gwas/traits/',
-        description: 'Get GWAS traits with aggregated statistics, filterable by category and searchable by trait, gene, or SNP',
+        description: 'Get GWAS traits with aggregated statistics, filterable by category and searchable by trait or SNP',
         category: 'Data',
         body: [
             { name: 'category', type: 'string', required: false, description: 'Filter by category (or "all")', example: 'Neurological' },
             { name: 'limit', type: 'integer', required: false, description: 'Maximum number of traits to return (optional)', example: '100' },
-            { name: 'search', type: 'string', required: false, description: 'Search by trait name, gene symbol, or SNP rsID', example: 'BDNF' },
+            { name: 'search', type: 'string', required: false, description: 'Search by trait name or SNP rsID', example: 'BDNF' },
         ],
         response: 'List of traits with SNP counts, gene counts, and minimum p-values',
         example: {

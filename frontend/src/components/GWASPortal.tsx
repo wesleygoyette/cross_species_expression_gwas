@@ -749,14 +749,16 @@ export function GWASPortal() {
                                                     <div className="flex items-center justify-center py-12">
                                                         <Loader2 className="w-8 h-8 animate-spin text-primary" />
                                                     </div>
-                                                ) : traitSnps.length > 0 ? (
+                                                ) : traitSnps.some(snp => snp.associated_genes && snp.associated_genes.trim()) ? (
                                                     <>
                                                         {/* Calculate pagination */}
                                                         {(() => {
-                                                            const totalPages = Math.ceil(traitSnps.length / snpItemsPerPage);
+                                                            // Filter SNPs to only show those with associated genes
+                                                            const snpsWithGenes = traitSnps.filter(snp => snp.associated_genes && snp.associated_genes.trim());
+                                                            const totalPages = Math.ceil(snpsWithGenes.length / snpItemsPerPage);
                                                             const startIndex = (snpCurrentPage - 1) * snpItemsPerPage;
                                                             const endIndex = startIndex + snpItemsPerPage;
-                                                            const paginatedSnps = traitSnps.slice(startIndex, endIndex);
+                                                            const paginatedSnps = snpsWithGenes.slice(startIndex, endIndex);
 
                                                             return (
                                                                 <>
@@ -941,7 +943,7 @@ export function GWASPortal() {
                                                     </>
                                                 ) : (
                                                     <div className="text-center py-8 text-muted-foreground">
-                                                        No SNP data available for this trait
+                                                        No SNP-to-gene associations available for this trait
                                                     </div>
                                                 )}
                                             </TabsContent>

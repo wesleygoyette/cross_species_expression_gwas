@@ -100,7 +100,7 @@ function GenomicVisualization() {
                 {/* Conservation track */}
                 <div className="space-y-1 pt-4 border-t border-border/50">
                     <div className="flex items-center gap-3">
-                        <span className="text-xs text-muted-foreground w-16">Conservation</span>
+                        <span className="text-xs text-muted-foreground w-16">P-Value</span>
                         <div className="flex-1 h-12 relative">
                             {Array.from({ length: 50 }).map((_, i) => {
                                 const height = Math.random() * 100;

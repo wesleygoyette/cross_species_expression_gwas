@@ -1,4 +1,4 @@
-import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { ArrowRight, Database, Dna } from 'lucide-react';
 
 export function Hero() {
@@ -24,8 +24,24 @@ export function Hero() {
                             Analyze <span className="text-[#00ff88]">26,404 disease-associated variants</span> spanning <span className="text-[#ff8c42]">790 human traits</span>.
                         </p>
                         <div className="flex flex-wrap gap-4">
-                            <a href="#gene-explorer" className="bg-[#00d4ff] hover:bg-[#00d4ff]/90 text-[#0a0e27] inline-flex items-center px-4 py-2 rounded-md font-medium transition-colors">
-                                Explore Data <ArrowRight className="ml-2 w-4 h-4" />
+                            <a href="#gwas" className="cursor-pointer text-xl py-1 px-4 border-0 inline-flex items-center rounded-md font-medium transition-all"
+                                style={{
+                                    background: '#00d4ff',
+                                    color: '#0a0e27',
+                                    boxShadow: '0 4px 12px rgba(0, 212, 255, 0.4)',
+                                    transform: 'scale(1)',
+                                    transition: 'all 0.2s ease',
+                                    fontWeight: '500'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 212, 255, 0.5)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 212, 255, 0.4)';
+                                }}>
+                                Explore Data →
                             </a>
                             <a href="#api" className="border border-[#00d4ff]/30 hover:bg-[#00d4ff]/10 text-foreground inline-flex items-center px-4 py-2 rounded-md font-medium transition-colors">
                                 <Database className="mr-2 w-4 h-4" />

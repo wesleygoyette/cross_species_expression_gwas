@@ -71,7 +71,7 @@ export function QuickGuide() {
     ];
 
     return (
-        <section id="guide" className="py-20 px-4 bg-gradient-to-b from-card/30 to-background">
+        <section id="guide" className="py-20 px-4 bg-background">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-16">
@@ -80,10 +80,10 @@ export function QuickGuide() {
                         Getting Started
                     </Badge>
                     <h2 className="text-4xl font-bold mb-4" style={{
-                        background: 'linear-gradient(135deg, #00d4ff 0%, #00ff88 50%, #ff8c42 100%)',
+                        background: 'linear-gradient(to right, var(--foreground) 0%, var(--primary) 40%, var(--primary) 70%, var(--genomic-green) 100%)',
                         WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text'
+                        backgroundClip: 'text',
+                        color: 'transparent'
                     }}>
                         Explore Gene Regulation Across Species
                     </h2>
@@ -94,10 +94,10 @@ export function QuickGuide() {
                 </div>
 
                 {/* How to Use */}
-                <Card className="mb-12 shadow-lg border" style={{ background: '#151a35', borderColor: 'rgba(0, 212, 255, 0.15)' }}>
+                <Card className="mb-12 shadow-lg border bg-card dark:bg-black/40" style={{ borderColor: 'rgba(0, 212, 255, 0.15)' }}>
                     <CardHeader className="mb-4">
-                        <CardTitle className="text-3xl mb-2" style={{ color: '#00d4ff' }}>How to Use This Platform</CardTitle>
-                        <CardDescription style={{ fontSize: '1rem', color: '#8b91b0' }}>Follow these simple steps to start exploring genomic data</CardDescription>
+                        <CardTitle className="text-3xl mb-2 text-[#00d4ff]">How to Use This Platform</CardTitle>
+                        <CardDescription className="text-base text-muted-foreground">Follow these simple steps to start exploring genomic data</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-2 pb-8">
                         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -120,7 +120,7 @@ export function QuickGuide() {
                                             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                                             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
                                             <div className="mb-4 flex items-start gap-3">
-                                                <div className="flex-shrink-0 flex items-center justify-center rounded-full text-lg font-bold"
+                                                <div className="flex-shrink-0 flex items-center justify-center rounded-full text-lg font-bold dark:text-background"
                                                     style={{
                                                         background: colors[idx].ring,
                                                         color: '#0a0e27',
@@ -134,7 +134,7 @@ export function QuickGuide() {
                                                 </div>
                                                 <h3 className="text-base font-semibold leading-tight pt-2" style={{ color: colors[idx].text }}>{step.title}</h3>
                                             </div>
-                                            <p className="text-sm leading-relaxed" style={{ color: '#8b91b0' }}>
+                                            <p className="text-sm leading-relaxed text-muted-foreground">
                                                 {step.content}
                                             </p>
                                         </div>
@@ -151,10 +151,10 @@ export function QuickGuide() {
                 {/* Key Concepts */}
                 <div className="grid lg:grid-cols-2 gap-8 mb-12">
                     {/* Understanding the Basics */}
-                    <Card className="shadow-lg border" style={{ background: '#151a35', borderColor: 'rgba(0, 212, 255, 0.15)' }}>
+                    <Card className="shadow-lg border bg-card dark:bg-black/40" style={{ borderColor: 'rgba(0, 212, 255, 0.15)' }}>
                         <CardHeader className='mb-4'>
-                            <CardTitle className="text-xl" style={{ color: '#00d4ff' }}>Key Concepts Explained</CardTitle>
-                            <CardDescription style={{ color: '#8b91b0' }}>Quick definitions of terms you'll encounter</CardDescription>
+                            <CardTitle className="text-xl text-[#00d4ff]">Key Concepts Explained</CardTitle>
+                            <CardDescription className="text-muted-foreground">Quick definitions of terms you'll encounter</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
@@ -164,8 +164,8 @@ export function QuickGuide() {
                                         borderLeft: '3px solid #00d4ff',
                                         boxShadow: '0 2px 8px rgba(0, 212, 255, 0.1)'
                                     }}>
-                                        <h4 className="font-semibold text-sm mb-1" style={{ color: '#00d4ff' }}>{tip.term}</h4>
-                                        <p className="text-sm" style={{ color: '#8b91b0' }}>{tip.definition}</p>
+                                        <h4 className="font-semibold text-sm mb-1 text-[#00d4ff]">{tip.term}</h4>
+                                        <p className="text-sm text-muted-foreground">{tip.definition}</p>
                                     </div>
                                 ))}
                             </div>
@@ -173,38 +173,38 @@ export function QuickGuide() {
                     </Card>
 
                     {/* FAQ */}
-                    <Card className="shadow-lg border" style={{ background: '#151a35', borderColor: 'rgba(0, 212, 255, 0.15)' }}>
+                    <Card className="shadow-lg border bg-card dark:bg-black/40" style={{ borderColor: 'rgba(0, 212, 255, 0.15)' }}>
                         <CardHeader className='mb-4'>
-                            <CardTitle className="text-xl" style={{ color: '#00ff88' }}>Frequently Asked Questions</CardTitle>
-                            <CardDescription style={{ color: '#8b91b0' }}>Common questions to help you get started</CardDescription>
+                            <CardTitle className="text-xl text-[#00ff88]">Frequently Asked Questions</CardTitle>
+                            <CardDescription className="text-muted-foreground">Common questions to help you get started</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Accordion type="multiple" className="w-full space-y-3">
                                 <AccordionItem value="item-1" className="rounded-lg px-4 py-1 border" style={{ background: 'rgba(0, 255, 136, 0.05)', borderColor: 'rgba(0, 255, 136, 0.2)' }}>
-                                    <AccordionTrigger className="text-sm font-semibold py-4 hover:no-underline" style={{ color: '#00ff88' }}>
+                                    <AccordionTrigger className="text-sm font-semibold py-4 hover:no-underline text-[#00ff88]">
                                         What's the difference between GWAS Portal and Gene Explorer?
                                     </AccordionTrigger>
-                                    <AccordionContent className="text-sm pb-5 pt-3" style={{ color: '#8b91b0' }}>
+                                    <AccordionContent className="text-sm pb-5 pt-3 text-muted-foreground">
                                         GWAS Portal is for searching and discovering - browse diseases to find associated genes.
                                         Gene Explorer is for visualization - once you have a gene, see its expression graphs,
                                         genome browser tracks, and regulatory elements across tissues and species.
                                     </AccordionContent>
                                 </AccordionItem>
                                 <AccordionItem value="item-2" className="rounded-lg px-4 py-1 border" style={{ background: 'rgba(0, 255, 136, 0.05)', borderColor: 'rgba(0, 255, 136, 0.2)' }}>
-                                    <AccordionTrigger className="text-sm font-semibold py-4 hover:no-underline" style={{ color: '#00ff88' }}>
+                                    <AccordionTrigger className="text-sm font-semibold py-4 hover:no-underline text-[#00ff88]">
                                         What are the three species covered?
                                     </AccordionTrigger>
-                                    <AccordionContent className="text-sm pb-5 pt-3" style={{ color: '#8b91b0' }}>
+                                    <AccordionContent className="text-sm pb-5 pt-3 text-muted-foreground">
                                         Human (reference for health/disease), mouse (common research model), and pig
                                         (agricultural and biomedical applications). These three species let us understand
                                         which genetic features are universally important in mammals.
                                     </AccordionContent>
                                 </AccordionItem>
                                 <AccordionItem value="item-3" className="rounded-lg px-4 py-1 border" style={{ background: 'rgba(0, 255, 136, 0.05)', borderColor: 'rgba(0, 255, 136, 0.2)' }}>
-                                    <AccordionTrigger className="text-sm font-semibold py-4 hover:no-underline" style={{ color: '#00ff88' }}>
+                                    <AccordionTrigger className="text-sm font-semibold py-4 hover:no-underline text-[#00ff88]">
                                         Do I need to know programming to use this?
                                     </AccordionTrigger>
-                                    <AccordionContent className="text-sm pb-5 pt-3" style={{ color: '#8b91b0' }}>
+                                    <AccordionContent className="text-sm pb-5 pt-3 text-muted-foreground">
                                         Not at all! The website is designed to be fully usable through clicking and
                                         searching. However, if you want to analyze large amounts of data, we also provide
                                         an API for programmatic access.
@@ -241,17 +241,17 @@ export function QuickGuide() {
                                 }}>
                                 <CardHeader className="flex-1">
                                     <div className="mb-4 rounded-full inline-flex p-3" style={{ background: cardColors[idx].iconBg, width: 'fit-content', boxShadow: `0 4px 12px ${cardColors[idx].glow}` }}>
-                                        <feature.icon className="w-7 h-7" style={{ color: '#0a0e27' }} />
+                                        <feature.icon className="w-7 h-7 text-background dark:text-background" />
                                     </div>
-                                    <CardTitle className="text-lg mb-2" style={{ color: '#e8eaf0' }}>{feature.title}</CardTitle>
-                                    <CardDescription className="text-sm mb-4" style={{ color: '#8b91b0' }}>
+                                    <CardTitle className="text-lg mb-2 text-foreground">{feature.title}</CardTitle>
+                                    <CardDescription className="text-sm mb-4 text-muted-foreground">
                                         {feature.description}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="mt-auto">
-                                    <div className="text-xs flex items-start gap-2 p-3 rounded-lg border" style={{ background: 'rgba(30, 36, 71, 0.5)', borderColor: cardColors[idx].border }}>
+                                    <div className="text-xs flex items-start gap-2 p-3 rounded-lg border bg-background/50 dark:bg-black/20" style={{ borderColor: cardColors[idx].border }}>
                                         <Info className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: cardColors[idx].iconBg }} />
-                                        <span style={{ color: '#8b91b0', fontStyle: 'italic' }}>{feature.example}</span>
+                                        <span className="text-muted-foreground italic">{feature.example}</span>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -266,9 +266,9 @@ export function QuickGuide() {
                         borderColor: 'rgba(0, 212, 255, 0.3)',
                         padding: '2px'
                     }}>
-                        <CardContent className="pt-6" style={{ background: '#151a35', borderRadius: '8px' }}>
-                            <h3 className="text-xl font-semibold mb-2" style={{ color: '#00d4ff' }}>Ready to Start Exploring?</h3>
-                            <p className="mb-6" style={{ color: '#8b91b0', maxWidth: '500px', margin: '0 auto 24px' }}>
+                        <CardContent className="pt-6 bg-card dark:bg-black/40" style={{ borderRadius: '8px' }}>
+                            <h3 className="text-xl font-semibold mb-2 text-[#00d4ff]">Ready to Start Exploring?</h3>
+                            <p className="mb-6 text-muted-foreground" style={{ maxWidth: '500px', margin: '0 auto 24px' }}>
                                 Start with GWAS Portal to search diseases, or jump to Gene Explorer to visualize your gene with interactive graphs
                             </p>
                             <div className="flex gap-4 justify-center flex-wrap">

@@ -1,6 +1,7 @@
-import { Search, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Navigation() {
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -23,20 +24,21 @@ export function Navigation() {
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-gradient-to-br from-[#00d4ff] to-[#00ff88] rounded" />
+                                <div className="w-8 h-8 bg-gradient-to-br from-[var(--genomic-blue)] to-[var(--genomic-green)] rounded" />
                                 <div>
-                                    <h1 className="text-[#00d4ff] tracking-tight">RegLand</h1>
+                                    <h1 className="text-[var(--genomic-blue)] tracking-tight">RegLand</h1>
                                     <p className="text-xs text-muted-foreground" style={{ fontSize: '0.60rem' }}>Cross-Species Regulatory Genomics</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="hidden md:flex items-center gap-8">
-                            <a href="/" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Home</a>
-                            <a href="#guide" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Getting Started</a>
-                            <a href="#gwas" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">GWAS Portal</a>
-                            <a href="#gene-explorer" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">Gene Explorer</a>
-                            <a href="#api" className="text-sm font-medium text-foreground/70 hover:text-[#00d4ff] transition-colors">API</a>
+                            <a href="/" className="text-sm font-medium text-foreground/70 hover:text-[var(--genomic-blue)] transition-colors">Home</a>
+                            <a href="#guide" className="text-sm font-medium text-foreground/70 hover:text-[var(--genomic-blue)] transition-colors">Getting Started</a>
+                            <a href="#gwas" className="text-sm font-medium text-foreground/70 hover:text-[var(--genomic-blue)] transition-colors">GWAS Portal</a>
+                            <a href="#gene-explorer" className="text-sm font-medium text-foreground/70 hover:text-[var(--genomic-blue)] transition-colors">Gene Explorer</a>
+                            <a href="#api" className="text-sm font-medium text-foreground/70 hover:text-[var(--genomic-blue)] transition-colors">API</a>
+                            <ThemeToggle />
                         </div>
 
                         <Button
@@ -47,7 +49,7 @@ export function Navigation() {
                             onClick={() => setMobileNavOpen(!mobileNavOpen)}
                         >
                             {mobileNavOpen ? (
-                                <X className="w-5 h-5 text-[#00d4ff]" />
+                                <X className="w-5 h-5 text-[var(--genomic-blue)]" />
                             ) : (
                                 <Menu className="w-5 h-5" />
                             )}
@@ -69,43 +71,49 @@ export function Navigation() {
                             <nav className="flex flex-col gap-2 p-6 flex-1">
                                 <a
                                     href="/"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium text-foreground/90 hover:text-[var(--genomic-blue)] transition-all px-4 py-3 rounded-lg hover:bg-[var(--genomic-blue)]/10 border border-transparent hover:border-[var(--genomic-blue)]/20"
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     Home
                                 </a>
                                 <a
                                     href="#guide"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium text-foreground/90 hover:text-[var(--genomic-blue)] transition-all px-4 py-3 rounded-lg hover:bg-[var(--genomic-blue)]/10 border border-transparent hover:border-[var(--genomic-blue)]/20"
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     Getting Started
                                 </a>
                                 <a
                                     href="#gwas"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium text-foreground/90 hover:text-[var(--genomic-blue)] transition-all px-4 py-3 rounded-lg hover:bg-[var(--genomic-blue)]/10 border border-transparent hover:border-[var(--genomic-blue)]/20"
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     GWAS Portal
                                 </a>
                                 <a
                                     href="#gene-explorer"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium text-foreground/90 hover:text-[var(--genomic-blue)] transition-all px-4 py-3 rounded-lg hover:bg-[var(--genomic-blue)]/10 border border-transparent hover:border-[var(--genomic-blue)]/20"
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     Gene Explorer
                                 </a>
                                 <a
                                     href="#api"
-                                    className="text-base font-medium text-foreground/90 hover:text-[#00d4ff] transition-all px-4 py-3 rounded-lg hover:bg-[#00d4ff]/10 border border-transparent hover:border-[#00d4ff]/20"
+                                    className="text-base font-medium text-foreground/90 hover:text-[var(--genomic-blue)] transition-all px-4 py-3 rounded-lg hover:bg-[var(--genomic-blue)]/10 border border-transparent hover:border-[var(--genomic-blue)]/20"
                                     onClick={() => setMobileNavOpen(false)}
                                 >
                                     API
                                 </a>
                             </nav>
 
-                            {/* Footer */}
-                            <div className="p-6 border-t border-[#00d4ff]/20">
+                            {/* Footer with Theme Toggle */}
+                            <div className="p-6 border-t border-[var(--genomic-blue)]/20">
+                                <div className="flex items-center justify-between mb-3">
+                                    <p className="text-xs text-muted-foreground">
+                                        Theme
+                                    </p>
+                                    <ThemeToggle />
+                                </div>
                                 <p className="text-xs text-muted-foreground text-center">
                                     Cross-Species Regulatory Genomics
                                 </p>
@@ -145,7 +153,7 @@ export function Navigation() {
                     width: 18rem;
                     background: linear-gradient(to bottom, #0a0f1c, #0f1419, #0a0f1c);
                     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                    border-left: 1px solid rgba(0, 212, 255, 0.2);
+                    border-left: 1px solid var(--genomic-blue);
                     animation: slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     pointer-events: all;
                 }
@@ -175,7 +183,7 @@ export function Navigation() {
                 
                 @media (min-width: 850px) {
                     .logo-text-responsive {
-                        color: #00d4ff
+                        color: var(--genomic-blue)
                     }
                 }
             `}</style>

@@ -617,7 +617,7 @@ export function APIDocumentation() {
     };
 
     return (
-        <section id="api" className="py-20 px-4 bg-gradient-to-b from-card/30 to-background">
+        <section id="api" className="py-20 px-4 bg-background">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-12 text-center">
@@ -625,10 +625,10 @@ export function APIDocumentation() {
                         Developer Resources
                     </Badge>
                     <h2 className="text-4xl font-bold mb-4" style={{
-                        background: 'linear-gradient(135deg, #00d4ff 0%, #00ff88 50%, #ff8c42 100%)',
+                        background: 'linear-gradient(to right, var(--foreground) 0%, var(--primary) 40%, var(--primary) 70%, var(--genomic-green) 100%)',
                         WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text'
+                        backgroundClip: 'text',
+                        color: 'transparent'
                     }}>
                         API Documentation
                     </h2>

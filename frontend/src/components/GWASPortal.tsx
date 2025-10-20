@@ -245,10 +245,10 @@ export function GWASPortal() {
                         </Badge>
 
                         <h2 className="text-4xl font-bold mb-4" style={{
-                            background: 'linear-gradient(135deg, #00d4ff 0%, #00ff88 50%, #ff8c42 100%)',
+                            background: 'linear-gradient(to right, var(--foreground) 0%, var(--primary) 40%, var(--primary) 70%, var(--genomic-green) 100%)',
                             WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text'
+                            backgroundClip: 'text',
+                            color: 'transparent'
                         }}>
                             GWAS Disease Portal
                         </h2>
@@ -333,7 +333,7 @@ export function GWASPortal() {
 
     // Browse/Results view
     return (
-        <section id="gwas" className="py-20 px-4 bg-gradient-to-b from-card/30 to-background min-h-screen">
+        <section id="gwas" className="py-20 px-4 bg-background min-h-screen">
             <div className="max-w-7xl mx-auto">
                 {/* Search Header */}
                 <div className="mb-8">

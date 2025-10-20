@@ -11,6 +11,12 @@ import { Footer } from './components/Footer';
 
 export default function App() {
     useEffect(() => {
+        // Initialize theme on first load
+        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+        document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+
         // Handle hash navigation on initial page load
         const hash = window.location.hash;
         if (hash) {
@@ -25,7 +31,7 @@ export default function App() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen">
             <Navigation />
             <main>
                 <Hero />
@@ -37,6 +43,6 @@ export default function App() {
                 <APIDocumentation />
             </main>
             <Footer />
-        </div>
+        </div >
     );
 }

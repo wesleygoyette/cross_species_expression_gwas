@@ -1,7 +1,40 @@
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
+import { useState, useEffect } from 'react';
+import { getSpeciesBiotypeCount, SpeciesBiotypeCount } from '../utils/api';
 
 export function SpeciesTree() {
+    const [speciesCounts, setSpeciesCounts] = useState<SpeciesBiotypeCount[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchSpeciesCounts = async () => {
+            try {
+                const response = await getSpeciesBiotypeCount();
+                setSpeciesCounts(response.species_counts);
+            } catch (err) {
+                console.error('Failed to fetch species counts:', err);
+                setError('Failed to load species data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSpeciesCounts();
+    }, []);
+
+    // Helper function to get count for a specific species
+    const getSpeciesCount = (speciesId: string): number => {
+        const species = speciesCounts.find(s => s.species_id === speciesId);
+        return species?.total || 0;
+    };
+
+    // Show error state if data failed to load
+    if (error) {
+        console.warn('Using fallback data due to API error:', error);
+    }
+
     return (
         <section className="py-16 px-4 bg-background">
             <div className="max-w-7xl mx-auto">
@@ -84,7 +117,9 @@ export function SpeciesTree() {
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <p className="text-muted-foreground text-xs mb-1">Genes</p>
-                                    <p className="text-[#00d4ff]">61,471</p>
+                                    <p className="text-[#00d4ff]">
+                                        {loading ? 'Loading...' : getSpeciesCount('human_hg38').toLocaleString()}
+                                    </p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground text-xs mb-1">Enhancers</p>
@@ -112,7 +147,9 @@ export function SpeciesTree() {
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <p className="text-muted-foreground text-xs mb-1">Genes</p>
-                                    <p className="text-[#00ff88]">78,028</p>
+                                    <p className="text-[#00ff88]">
+                                        {loading ? 'Loading...' : getSpeciesCount('mouse_mm39').toLocaleString()}
+                                    </p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground text-xs mb-1">Enhancers</p>
@@ -140,7 +177,9 @@ export function SpeciesTree() {
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <p className="text-muted-foreground text-xs mb-1">Genes</p>
-                                    <p className="text-[#ff8c42]">16,337</p>
+                                    <p className="text-[#ff8c42]">
+                                        {loading ? 'Loading...' : getSpeciesCount('pig_susScr11').toLocaleString()}
+                                    </p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground text-xs mb-1">Enhancers</p>

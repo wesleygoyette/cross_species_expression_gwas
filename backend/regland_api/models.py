@@ -121,3 +121,14 @@ class GeneExpression(models.Model):
         indexes = [
             models.Index(fields=['symbol', 'tissue']),
         ]
+
+
+class SpeciesBiotypeCount(models.Model):
+    """Species biotype counts for genes"""
+    species_id = models.CharField(max_length=50, primary_key=True)
+    lncRNA_count = models.IntegerField(null=True, blank=True)
+    protein_coding_count = models.IntegerField(null=True, blank=True)
+    total = models.IntegerField()
+    
+    class Meta:
+        db_table = 'species_biotype_counts'

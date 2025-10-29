@@ -144,6 +144,17 @@ def species_list(request):
 
 
 @api_view(['GET'])
+def species_biotype_counts(request):
+    """Get biotype counts for all species"""
+    from .models import SpeciesBiotypeCount
+    from .serializers import SpeciesBiotypeCountSerializer
+    
+    counts = SpeciesBiotypeCount.objects.all()
+    serializer = SpeciesBiotypeCountSerializer(counts, many=True)
+    return Response({'species_counts': serializer.data})
+
+
+@api_view(['GET'])
 def gene_presets(request):
     """Get gene presets for different tissues"""
     presets = {

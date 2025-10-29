@@ -93,6 +93,17 @@ export interface SpeciesListResponse {
     species: Species[];
 }
 
+export interface SpeciesBiotypeCount {
+    species_id: string;
+    lncRNA_count: number;
+    protein_coding_count: number;
+    total: number;
+}
+
+export interface SpeciesBiotypeCountsResponse {
+    species_counts: SpeciesBiotypeCount[];
+}
+
 export interface DataQuality {
     tissue_availability: 'high' | 'low' | 'none';
     score_availability: 'high' | 'low' | 'none';
@@ -153,6 +164,15 @@ export async function getSpeciesList(): Promise<SpeciesListResponse> {
     const url = `${API_BASE_URL}${API_PREFIX}/species/`;
     const response = await fetch(url);
     return handleResponse<SpeciesListResponse>(response);
+}
+
+/**
+ * Get species biotype counts for all species
+ */
+export async function getSpeciesBiotypeCount(): Promise<SpeciesBiotypeCountsResponse> {
+    const url = `${API_BASE_URL}${API_PREFIX}/species/biotype-counts/`;
+    const response = await fetch(url);
+    return handleResponse<SpeciesBiotypeCountsResponse>(response);
 }
 
 /**

@@ -28,11 +28,6 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
-if not SECRET_KEY:
-    if DEBUG:
-        SECRET_KEY = 'django-insecure-change-me-in-production'
-    else:
-        raise ValueError("SECRET_KEY environment variable must be set in production")
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
 
@@ -100,11 +95,7 @@ else:
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': DB_FILE,
-        'OPTIONS': {
-            # Set journal mode to WAL for better concurrent read performance
-            'init_command': "PRAGMA query_only = OFF;",  # Allows migrations on startup
-        } if DEBUG else {},
+        'NAME': BASE_DIR / os.getenv('DATABASE_PATH', '../database/regland.sqlite'),
     }
 }
 
@@ -170,12 +161,9 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,https://crossgenome.site,https://www.crossgenome.site,http://crossgenome.site,http://www.crossgenome.site').split(',')
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
 
 CORS_ALLOW_CREDENTIALS = True
-
-# CSRF settings - exempt API endpoints
-CSRF_TRUSTED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,https://crossgenome.site,https://www.crossgenome.site,http://crossgenome.site,http://www.crossgenome.site').split(',')
 
 # Security settings for production
 if not DEBUG:

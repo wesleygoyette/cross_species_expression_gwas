@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Gene, Enhancer, EnhancerClass, GWASSnp, CTCFSite, TADDomain
+from .models import Gene, Enhancer, EnhancerClass, GWASSnp, CTCFSite, TADDomain, SpeciesBiotypeCount
 
 
 class GeneSerializer(serializers.ModelSerializer):
@@ -69,3 +69,9 @@ class PlotDataSerializer(serializers.Serializer):
     plot_type = serializers.CharField()
     data = serializers.JSONField()
     config = serializers.JSONField()
+
+
+class SpeciesBiotypeCountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SpeciesBiotypeCount
+        fields = ['species_id', 'lncRNA_count', 'protein_coding_count', 'total']

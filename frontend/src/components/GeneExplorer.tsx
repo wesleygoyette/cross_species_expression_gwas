@@ -1117,22 +1117,22 @@ export function GeneExplorer() {
                                                                                                 </TooltipTrigger>
                                                                                                 <TooltipContent>
                                                                                                     <div className="text-xs space-y-1">
-                                                                                                        <p className="font-mono">Enhancer #{enhancer.enh_id}</p>
-                                                                                                        <p className="text-muted-foreground">
+                                                                                                        <p className="font-mono text-primary-foreground">Enhancer #{enhancer.enh_id}</p>
+                                                                                                        <p className="text-primary-foreground">
                                                                                                             {enhancer.chrom}:{enhancer.start.toLocaleString()}-{enhancer.end.toLocaleString()}
                                                                                                         </p>
                                                                                                         {hasScore && (
-                                                                                                            <p className="text-muted-foreground">
+                                                                                                            <p className="text-primary-foreground">
                                                                                                                 Score: {typeof enhancer.score === 'number' ? enhancer.score.toFixed(2) : Number(enhancer.score).toFixed(2)}
                                                                                                             </p>
                                                                                                         )}
                                                                                                         {enhancer.tissue && (
-                                                                                                            <p className="text-muted-foreground">
+                                                                                                            <p className="text-primary-foreground">
                                                                                                                 Tissue: {enhancer.tissue}
                                                                                                             </p>
                                                                                                         )}
                                                                                                         {enhancer.class_name && (
-                                                                                                            <Badge variant="outline" className="text-xs">
+                                                                                                            <Badge variant="outline" className="text-xs text-primary-foreground border-primary-foreground">
                                                                                                                 {enhancer.class_name}
                                                                                                             </Badge>
                                                                                                         )}
@@ -1164,17 +1164,17 @@ export function GeneExplorer() {
                                                                                             </TooltipTrigger>
                                                                                             <TooltipContent>
                                                                                                 <div className="text-xs space-y-1">
-                                                                                                    <p className="font-mono">CTCF Site #{ctcf.site_id}</p>
-                                                                                                    <p className="text-muted-foreground">
+                                                                                                    <p className="font-mono text-primary-foreground">CTCF Site #{ctcf.site_id}</p>
+                                                                                                    <p className="text-primary-foreground">
                                                                                                         {ctcf.chrom}:{ctcf.start.toLocaleString()}-{ctcf.end.toLocaleString()}
                                                                                                     </p>
                                                                                                     {ctcf.score && (
-                                                                                                        <p className="text-muted-foreground">
+                                                                                                        <p className="text-primary-foreground">
                                                                                                             Score: {typeof ctcf.score === 'number' ? ctcf.score.toFixed(2) : Number(ctcf.score).toFixed(2)}
                                                                                                         </p>
                                                                                                     )}
                                                                                                     {ctcf.cons_class && (
-                                                                                                        <p className="text-[var(--data-orange)]">
+                                                                                                        <p className="text-primary-foreground">
                                                                                                             Conservation: {ctcf.cons_class}
                                                                                                         </p>
                                                                                                     )}
@@ -1205,17 +1205,17 @@ export function GeneExplorer() {
                                                                                             </TooltipTrigger>
                                                                                             <TooltipContent>
                                                                                                 <div className="text-xs space-y-1">
-                                                                                                    <p className="font-mono">{snp.rsid || `SNP ${snp.snp_id}`}</p>
-                                                                                                    <p className="text-muted-foreground">
+                                                                                                    <p className="font-mono text-primary-foreground">{snp.rsid || `SNP ${snp.snp_id}`}</p>
+                                                                                                    <p className="text-primary-foreground">
                                                                                                         {snp.chrom}:{snp.pos.toLocaleString()}
                                                                                                     </p>
                                                                                                     {snp.trait && (
-                                                                                                        <p className="text-muted-foreground">
+                                                                                                        <p className="text-primary-foreground">
                                                                                                             Trait: {snp.trait}
                                                                                                         </p>
                                                                                                     )}
                                                                                                     {snp.pval && (
-                                                                                                        <p className="text-muted-foreground">
+                                                                                                        <p className="text-primary-foreground">
                                                                                                             p-value: {snp.pval.toExponential(2)}
                                                                                                         </p>
                                                                                                     )}

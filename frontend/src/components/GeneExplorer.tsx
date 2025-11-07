@@ -509,7 +509,7 @@ export function GeneExplorer() {
             case 'low':
                 return <Badge className="bg-[var(--data-orange)]/10 text-[var(--data-orange)] border-[var(--data-orange)]/20">Limited</Badge>;
             case 'none':
-                return <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">Unavailable</Badge>;
+                return <Badge variant="destructive" className="bg-destructive/10 text-destructive-foreground border-destructive/20">Unavailable</Badge>;
         }
     };
 

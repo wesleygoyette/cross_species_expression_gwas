@@ -7,6 +7,7 @@ import { Card } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Collapsible, CollapsibleContent } from './ui/collapsible';
+import { Checkbox } from './ui/checkbox';
 import {
     Pagination,
     PaginationContent,
@@ -32,6 +33,7 @@ import {
 
 export function GeneExplorer() {
     const [selectedGene, setSelectedGene] = useState('');
+    const [selectedSpecies, setSelectedSpecies] = useState<string[]>(['Human', 'Mouse', 'Pig']); // New state for species selection
     const [zoomLevel, setZoomLevel] = useState(1);
     const [viewStart, setViewStart] = useState(0); // Start position of the current view
     const [selectedTissue, setSelectedTissue] = useState<string>('Brain');
@@ -555,6 +557,19 @@ export function GeneExplorer() {
         }
     }
 
+    // Function to handle species selection
+    const handleSpeciesToggle = (species: string) => {
+        setSelectedSpecies(prev => {
+            if (prev.includes(species)) {
+                // Remove species if already selected
+                return prev.filter(s => s !== species);
+            } else {
+                // Add species if not selected
+                return [...prev, species];
+            }
+        });
+    };
+
     // Calculate conservation bins from enhancer data
     const calculateConservationBins = (enhancers: Enhancer[], regionStart: number, regionEnd: number, numBins: number = 100): number[] => {
         const binWidth = (regionEnd - regionStart) / numBins;
@@ -721,6 +736,76 @@ export function GeneExplorer() {
 
                             </div>
                         </Card>
+
+                        {/* Species Selector - Only show when gene is selected */}
+                        {selectedGene && (
+                            <Card className="p-4 bg-card border-border">
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-medium text-foreground">Species to Display</h4>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p className="text-xs max-w-xs">Select which species to show in genome tracks and conservation analysis</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        {['Human', 'Mouse', 'Pig'].map((species) => {
+                                            const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
+                                            const hasData = speciesData !== null;
+                                            
+                                            return (
+                                                <div key={species} className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <Checkbox
+                                                            id={`species-${species.toLowerCase()}`}
+                                                            checked={selectedSpecies.includes(species)}
+                                                            onCheckedChange={() => handleSpeciesToggle(species)}
+                                                        />
+                                                        <label 
+                                                            htmlFor={`species-${species.toLowerCase()}`}
+                                                            className="text-sm font-medium text-foreground cursor-pointer"
+                                                        >
+                                                            {species}
+                                                            <span className="text-xs text-muted-foreground font-normal ml-1.5">
+                                                                ({species === 'Human' ? 'Homo sapiens' : species === 'Mouse' ? 'Mus musculus' : 'Sus scrofa'})
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-2">
+                                                        {hasData ? (
+                                                            <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                                                                Data available
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                                No data
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    
+                                    {selectedSpecies.length === 0 && (
+                                        <Alert className="bg-orange-50 border-orange-200">
+                                            <AlertCircle className="h-4 w-4 text-orange-600" />
+                                            <AlertDescription className="text-sm text-orange-600">
+                                                Please select at least one species to display data.
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+                                </div>
+                            </Card>
+                        )}
 
 
                         {/* Gene Info Card - Only show when data is loaded */}
@@ -992,18 +1077,29 @@ export function GeneExplorer() {
                                                     <Info className="w-3 h-3" />
                                                     Use Up/Down arrows to zoom, Left/Right arrows to pan, Ctrl/Cmd + 0 to reset
                                                 </div>
-                                                {['Human', 'Mouse', 'Pig']
-                                                    .sort((a, b) => {
-                                                        // Sort so tracks with data come first, then tracks without data
-                                                        const aData = a === 'Human' ? apiData : a === 'Mouse' ? mouseData : pigData;
-                                                        const bData = b === 'Human' ? apiData : b === 'Mouse' ? mouseData : pigData;
-                                                        const aHasData = aData !== null;
-                                                        const bHasData = bData !== null;
+                                                
+                                                {selectedSpecies.length === 0 ? (
+                                                    <Alert className="bg-orange-50 border-orange-200">
+                                                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                                                        <AlertDescription className="text-sm text-orange-600">
+                                                            Please select at least one species from the species selector above to display genome tracks.
+                                                        </AlertDescription>
+                                                    </Alert>
+                                                ) : (
+                                                    <>
+                                                        {['Human', 'Mouse', 'Pig']
+                                                            .filter(species => selectedSpecies.includes(species)) // Filter by selected species
+                                                            .sort((a, b) => {
+                                                                // Sort so tracks with data come first, then tracks without data
+                                                                const aData = a === 'Human' ? apiData : a === 'Mouse' ? mouseData : pigData;
+                                                                const bData = b === 'Human' ? apiData : b === 'Mouse' ? mouseData : pigData;
+                                                                const aHasData = aData !== null;
+                                                                const bHasData = bData !== null;
 
-                                                        if (aHasData && !bHasData) return -1;
-                                                        if (!aHasData && bHasData) return 1;
-                                                        return 0; // Keep original order for items with same data status
-                                                    })
+                                                                if (aHasData && !bHasData) return -1;
+                                                                if (!aHasData && bHasData) return 1;
+                                                                return 0; // Keep original order for items with same data status
+                                                            })
                                                     .map((species, idx) => {
                                                         // Map species to their respective data
                                                         const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
@@ -1245,6 +1341,8 @@ export function GeneExplorer() {
                                                             </div>
                                                         );
                                                     })}
+                                                </>
+                                                )}
                                             </div>
 
                                             {/* Legend */}
@@ -1307,9 +1405,17 @@ export function GeneExplorer() {
                                                     <Activity className="w-6 h-6 animate-spin mx-auto mb-2" />
                                                     Loading conservation data...
                                                 </div>
+                                            ) : selectedSpecies.length === 0 ? (
+                                                <Alert className="bg-orange-50 border-orange-200">
+                                                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                                                    <AlertDescription className="text-sm text-orange-600">
+                                                        Please select at least one species from the species selector above to display conservation data.
+                                                    </AlertDescription>
+                                                </Alert>
                                             ) : (
                                                 <div className="space-y-4">
                                                     {['Human', 'Mouse', 'Pig']
+                                                        .filter(species => selectedSpecies.includes(species)) // Filter by selected species
                                                         .sort((a, b) => {
                                                             // Sort so tracks with data come first, then tracks without data
                                                             const aData = a === 'Human' ? apiData : a === 'Mouse' ? mouseData : pigData;
@@ -1714,7 +1820,7 @@ export function GeneExplorer() {
 
                                                                             {/* Page Numbers */}
                                                                             {(() => {
-                                                                                const pages = [];
+                                                                                const pages: React.ReactElement[] = [];
                                                                                 const maxVisiblePages = 5;
 
                                                                                 if (totalPages <= maxVisiblePages) {

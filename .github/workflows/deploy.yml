@@ -128,7 +128,7 @@ jobs:
     
     - name: Stop existing containers
       run: |
-        docker-compose down || true
+        docker compose down || true
     
     - name: Pull latest images
       run: |
@@ -149,11 +149,11 @@ jobs:
       run: |
         export BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
         export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
-        docker-compose -f docker-compose.prod.yml up -d
+        docker compose -f docker-compose.prod.yml up -d
     
     - name: Wait for services to be healthy
       run: |
-        timeout 300 bash -c 'until docker-compose -f docker-compose.prod.yml ps | grep -q "healthy"; do sleep 5; done'
+        timeout 300 bash -c 'until docker compose -f docker-compose.prod.yml ps | grep -q "healthy"; do sleep 5; done'
     
     - name: Cleanup old images
       run: |

@@ -563,7 +563,7 @@ export function GWASPortal() {
 
                                                             {/* Page Numbers */}
                                                             {(() => {
-                                                                const pages = [];
+                                                                const pages: React.ReactElement[] = [];
                                                                 const maxVisiblePages = 5;
 
                                                                 if (totalPages <= maxVisiblePages) {
@@ -826,7 +826,7 @@ export function GWASPortal() {
 
                                                                                 {/* Page Numbers */}
                                                                                 {(() => {
-                                                                                    const pages = [];
+                                                                                    const pages: React.ReactElement[] = [];
                                                                                     const maxVisiblePages = 5;
 
                                                                                     if (totalPages <= maxVisiblePages) {
@@ -1076,7 +1076,7 @@ export function GWASPortal() {
 
                                                                                 {/* Page Numbers */}
                                                                                 {(() => {
-                                                                                    const pages = [];
+                                                                                    const pages: React.ReactElement[] = [];
                                                                                     const maxVisiblePages = 5;
 
                                                                                     if (totalPages <= maxVisiblePages) {

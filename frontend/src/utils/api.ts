@@ -83,6 +83,7 @@ export interface ExpressionResponse {
 export interface Species {
     id: string;
     name: string;
+    genome_build?: string;
 }
 
 export interface GeneSearchResponse {
@@ -309,6 +310,20 @@ export function getSpeciesDisplayName(speciesId: string): string {
         'chicken_galGal6': 'Chicken',
     };
     return mapping[speciesId] || speciesId;
+}
+
+/**
+ * Map display name to species ID
+ */
+export function getSpeciesIdFromName(displayName: string): string {
+    const mapping: Record<string, string> = {
+        'Human': 'human_hg38',
+        'Mouse': 'mouse_mm39',
+        'Pig': 'pig_susScr11',
+        'Macaque': 'macaque_rheMac10',
+        'Chicken': 'chicken_galGal6',
+    };
+    return mapping[displayName] || displayName;
 }
 
 /**

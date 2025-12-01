@@ -25,15 +25,20 @@ import {
     getGeneExpression,
     getGeneDataQuality,
     getSpeciesDisplayName,
+    getSpeciesIdFromName,
+    getSpeciesList,
     type GeneRegionResponse,
     type Enhancer,
     type ExpressionData,
     type DataQuality,
+    type Species,
 } from '../utils/api';
 
 export function GeneExplorer() {
     const [selectedGene, setSelectedGene] = useState('');
-    const [selectedSpecies, setSelectedSpecies] = useState<string[]>(['Human', 'Mouse', 'Pig']); // New state for species selection
+    const [availableSpecies, setAvailableSpecies] = useState<Species[]>([]);
+    const [selectedSpecies, setSelectedSpecies] = useState<string[]>([]); // Display names of selected species
+    const [speciesDataMap, setSpeciesDataMap] = useState<Record<string, GeneRegionResponse | null>>({}); // Map species IDs to their data
     const [zoomLevel, setZoomLevel] = useState(1);
     const [viewStart, setViewStart] = useState(0); // Start position of the current view
     const [selectedTissue, setSelectedTissue] = useState<string>('Brain');
@@ -59,6 +64,26 @@ export function GeneExplorer() {
     const searchRef = useRef<HTMLDivElement>(null);
 
     const exampleGenes = ['BDNF', 'FOXP2', 'ALB', 'PCSK9', 'TP53'];
+
+    // Fetch available species from API on component mount
+    useEffect(() => {
+        const fetchSpecies = async () => {
+            try {
+                const response = await getSpeciesList();
+                setAvailableSpecies(response.species);
+                // Set default selected species to the display names of available species
+                const defaultSpecies = response.species.map(s => getSpeciesDisplayName(s.id));
+                setSelectedSpecies(defaultSpecies);
+            } catch (error) {
+                console.error('Error fetching species list:', error);
+                // Fallback to empty if API fails
+                setAvailableSpecies([]);
+                setSelectedSpecies([]);
+            }
+        };
+
+        fetchSpecies();
+    }, []);
 
     // Helper function to handle gene selection with validation
     const handleGeneSelection = async (geneInput?: string, useHighlighted: boolean = false) => {
@@ -153,7 +178,8 @@ export function GeneExplorer() {
     // Fetch real data from API
     useEffect(() => {
         // Don't fetch if no gene is selected
-        if (!selectedGene) {
+        if (!selectedGene || availableSpecies.length === 0) {
+            setSpeciesDataMap({});
             setApiData(null);
             setMouseData(null);
             setPigData(null);
@@ -167,39 +193,42 @@ export function GeneExplorer() {
             setErrorMessage('');
 
             try {
-                // Fetch data for all three species in parallel
-                const [humanData, mouseDataResult, pigDataResult] = await Promise.allSettled([
-                    getGeneRegionData(selectedGene, 'human_hg38', selectedTissue, 100),
-                    getGeneRegionData(selectedGene, 'mouse_mm39', selectedTissue, 100),
-                    getGeneRegionData(selectedGene, 'pig_susScr11', selectedTissue, 100)
-                ]);
+                // Fetch data for all available species in parallel
+                const fetchPromises = availableSpecies.map(species =>
+                    Promise.allSettled([
+                        Promise.resolve(species.id),
+                        getGeneRegionData(selectedGene, species.id, selectedTissue, 100)
+                    ]).then(([idResult, dataResult]) => ({
+                        speciesId: (idResult as PromiseFulfilledResult<string>).value,
+                        data: dataResult.status === 'fulfilled' ? dataResult.value : null,
+                        error: dataResult.status === 'rejected' ? dataResult.reason : null
+                    }))
+                );
 
-                // Set Human data
-                if (humanData.status === 'fulfilled') {
-                    setApiData(humanData.value);
-                } else {
-                    setApiData(null);
-                    console.error('Error fetching human data:', humanData.reason);
-                }
+                const results = await Promise.all(fetchPromises);
 
-                // Set Mouse data
-                if (mouseDataResult.status === 'fulfilled') {
-                    setMouseData(mouseDataResult.value);
-                } else {
-                    setMouseData(null);
-                    console.error('Error fetching mouse data:', mouseDataResult.reason);
-                }
+                const newSpeciesDataMap: Record<string, GeneRegionResponse | null> = {};
+                let anySucceeded = false;
 
-                // Set Pig data
-                if (pigDataResult.status === 'fulfilled') {
-                    setPigData(pigDataResult.value);
-                } else {
-                    setPigData(null);
-                    console.error('Error fetching pig data:', pigDataResult.reason);
-                }
+                results.forEach(result => {
+                    newSpeciesDataMap[result.speciesId] = result.data;
+                    if (result.data) {
+                        anySucceeded = true;
+                    }
+                    if (result.error) {
+                        console.error(`Error fetching data for ${result.speciesId}:`, result.error);
+                    }
+                });
+
+                setSpeciesDataMap(newSpeciesDataMap);
+
+                // Set legacy state variables for backward compatibility
+                setApiData(newSpeciesDataMap['human_hg38'] || null);
+                setMouseData(newSpeciesDataMap['mouse_mm39'] || null);
+                setPigData(newSpeciesDataMap['pig_susScr11'] || null);
 
                 // Show error only if ALL species failed
-                if (humanData.status === 'rejected' && mouseDataResult.status === 'rejected' && pigDataResult.status === 'rejected') {
+                if (!anySucceeded) {
                     setShowError(true);
                     setErrorMessage('Failed to load gene data');
                 }
@@ -213,7 +242,7 @@ export function GeneExplorer() {
         };
 
         fetchGeneData();
-    }, [selectedGene, selectedTissue]);
+    }, [selectedGene, selectedTissue, availableSpecies]);
 
     // Fetch expression data when gene changes
     useEffect(() => {
@@ -756,25 +785,26 @@ export function GeneExplorer() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        {['Human', 'Mouse', 'Pig'].map((species) => {
-                                            const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
+                                        {availableSpecies.map((speciesObj) => {
+                                            const speciesDisplayName = getSpeciesDisplayName(speciesObj.id);
+                                            const speciesData = speciesDataMap[speciesObj.id] || null;
                                             const hasData = speciesData !== null;
 
                                             return (
-                                                <div key={species} className="flex items-center justify-between">
+                                                <div key={speciesObj.id} className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
                                                         <Checkbox
-                                                            id={`species-${species.toLowerCase()}`}
-                                                            checked={selectedSpecies.includes(species)}
-                                                            onCheckedChange={() => handleSpeciesToggle(species)}
+                                                            id={`species-${speciesObj.id}`}
+                                                            checked={selectedSpecies.includes(speciesDisplayName)}
+                                                            onCheckedChange={() => handleSpeciesToggle(speciesDisplayName)}
                                                         />
                                                         <label
-                                                            htmlFor={`species-${species.toLowerCase()}`}
+                                                            htmlFor={`species-${speciesObj.id}`}
                                                             className="text-sm font-medium text-foreground cursor-pointer"
                                                         >
-                                                            {species}
+                                                            {speciesDisplayName}
                                                             <span className="text-xs text-muted-foreground font-normal ml-1.5">
-                                                                ({species === 'Human' ? 'Homo sapiens' : species === 'Mouse' ? 'Mus musculus' : 'Sus scrofa'})
+                                                                ({speciesObj.genome_build})
                                                             </span>
                                                         </label>
                                                     </div>
@@ -1087,12 +1117,12 @@ export function GeneExplorer() {
                                                     </Alert>
                                                 ) : (
                                                     <>
-                                                        {['Human', 'Mouse', 'Pig']
-                                                            .filter(species => selectedSpecies.includes(species)) // Filter by selected species
+                                                        {availableSpecies
+                                                            .filter(speciesObj => selectedSpecies.includes(getSpeciesDisplayName(speciesObj.id)))
                                                             .sort((a, b) => {
                                                                 // Sort so tracks with data come first, then tracks without data
-                                                                const aData = a === 'Human' ? apiData : a === 'Mouse' ? mouseData : pigData;
-                                                                const bData = b === 'Human' ? apiData : b === 'Mouse' ? mouseData : pigData;
+                                                                const aData = speciesDataMap[a.id] || null;
+                                                                const bData = speciesDataMap[b.id] || null;
                                                                 const aHasData = aData !== null;
                                                                 const bHasData = bData !== null;
 
@@ -1100,11 +1130,11 @@ export function GeneExplorer() {
                                                                 if (!aHasData && bHasData) return 1;
                                                                 return 0; // Keep original order for items with same data status
                                                             })
-                                                            .map((species, idx) => {
+                                                            .map((speciesObj, idx) => {
                                                                 // Map species to their respective data
-                                                                const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
+                                                                const speciesDisplayName = getSpeciesDisplayName(speciesObj.id);
+                                                                const speciesData = speciesDataMap[speciesObj.id] || null;
                                                                 const hasData = speciesData !== null;
-                                                                const identity = species === 'Human' ? 100 : species === 'Mouse' ? 87 : 79;
 
                                                                 // Calculate gene position within current view - gene positioned at center of base window
                                                                 const geneStart = 0.2 * baseWindowSize; // Gene starts at 20% of base window
@@ -1114,13 +1144,13 @@ export function GeneExplorer() {
                                                                 const geneWidthPercent = geneRightPercent - geneLeftPercent;
 
                                                                 return (
-                                                                    <div key={species} className="space-y-2">
+                                                                    <div key={speciesObj.id} className="space-y-2">
                                                                         <div className="flex items-center justify-between">
                                                                             <div className="flex items-center gap-2">
                                                                                 <h4 className="text-sm font-medium text-foreground">
-                                                                                    {species}
+                                                                                    {speciesDisplayName}
                                                                                     <span className="text-xs text-muted-foreground font-normal ml-1.5">
-                                                                                        ({species === 'Human' ? 'Homo sapiens' : species === 'Mouse' ? 'Mus musculus' : 'Sus scrofa'})
+                                                                                        ({speciesObj.genome_build})
                                                                                     </span>
                                                                                 </h4>
                                                                                 {!hasData && (
@@ -1129,10 +1159,8 @@ export function GeneExplorer() {
                                                                                     </Badge>
                                                                                 )}
                                                                             </div>
-                                                                            {/* <Badge variant="secondary" className="text-xs">
-                                                                    {identity}% sequence identity
-                                                                </Badge> */}
-                                                                        </div>                                                            <div
+                                                                        </div>
+                                                                        <div
                                                                             className={`h-32 bg-secondary/20 rounded border border-border relative overflow-hidden transition-all duration-200 ${!hasData ? 'opacity-40' : ''}`}
                                                                         >
                                                                             {hasData ? (
@@ -1334,7 +1362,7 @@ export function GeneExplorer() {
                                                                                 </>
                                                                             ) : (
                                                                                 <div className="absolute inset-0 flex items-center justify-center">
-                                                                                    <p className="text-xs text-muted-foreground">No data available for {species}</p>
+                                                                                    <p className="text-xs text-muted-foreground">No data available for {speciesDisplayName}</p>
                                                                                 </div>
                                                                             )}
                                                                         </div>
@@ -1414,12 +1442,12 @@ export function GeneExplorer() {
                                                 </Alert>
                                             ) : (
                                                 <div className="space-y-4">
-                                                    {['Human', 'Mouse', 'Pig']
-                                                        .filter(species => selectedSpecies.includes(species)) // Filter by selected species
+                                                    {availableSpecies
+                                                        .filter(speciesObj => selectedSpecies.includes(getSpeciesDisplayName(speciesObj.id)))
                                                         .sort((a, b) => {
                                                             // Sort so tracks with data come first, then tracks without data
-                                                            const aData = a === 'Human' ? apiData : a === 'Mouse' ? mouseData : pigData;
-                                                            const bData = b === 'Human' ? apiData : b === 'Mouse' ? mouseData : pigData;
+                                                            const aData = speciesDataMap[a.id] || null;
+                                                            const bData = speciesDataMap[b.id] || null;
                                                             const aHasData = aData !== null;
                                                             const bHasData = bData !== null;
 
@@ -1427,15 +1455,16 @@ export function GeneExplorer() {
                                                             if (!aHasData && bHasData) return 1;
                                                             return 0; // Keep original order for items with same data status
                                                         })
-                                                        .map((species) => {
+                                                        .map((speciesObj) => {
                                                             // Map species to their respective data
-                                                            const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
+                                                            const speciesDisplayName = getSpeciesDisplayName(speciesObj.id);
+                                                            const speciesData = speciesDataMap[speciesObj.id] || null;
 
                                                             if (!speciesData) {
                                                                 return (
-                                                                    <div key={species} className="space-y-2">
+                                                                    <div key={speciesObj.id} className="space-y-2">
                                                                         <div className="flex items-center justify-between">
-                                                                            <span className="text-sm text-foreground">{species}</span>
+                                                                            <span className="text-sm text-foreground">{speciesDisplayName}</span>
                                                                             <Badge variant="outline" className="text-xs">
                                                                                 No data
                                                                             </Badge>
@@ -1468,10 +1497,10 @@ export function GeneExplorer() {
                                                             const totalCount = speciesData.enhancers.length;
 
                                                             return (
-                                                                <div key={species} className="space-y-2">
+                                                                <div key={speciesObj.id} className="space-y-2">
                                                                     <div className="flex items-center justify-between">
                                                                         <div className="flex items-center gap-2">
-                                                                            <span className="text-sm text-foreground">{species}</span>
+                                                                            <span className="text-sm text-foreground">{speciesDisplayName}</span>
                                                                             <span className="text-xs text-muted-foreground">
                                                                                 ({conservedCount}/{totalCount} conserved)
                                                                             </span>

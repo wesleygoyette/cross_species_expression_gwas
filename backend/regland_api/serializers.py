@@ -1,11 +1,19 @@
 from rest_framework import serializers
-from .models import Gene, Enhancer, EnhancerClass, GWASSnp, CTCFSite, TADDomain, SpeciesBiotypeCount
+from .models import Gene, Enhancer, EnhancerClass, GWASSnp, CTCFSite, TADDomain, SpeciesBiotypeCount, Species
 
 
 class GeneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gene
         fields = ['gene_id', 'symbol', 'species_id', 'chrom', 'start', 'end']
+
+
+class SpeciesSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(source='species_id', read_only=True)
+    
+    class Meta:
+        model = Species
+        fields = ['id', 'name', 'genome_build']
 
 
 class EnhancerSerializer(serializers.ModelSerializer):

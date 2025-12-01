@@ -132,15 +132,13 @@ def gene_region_data(request):
 
 @api_view(['GET'])
 def species_list(request):
-    """Get list of available species"""
-    species = [
-        {'id': 'human_hg38', 'name': 'Human (hg38)'},
-        {'id': 'mouse_mm39', 'name': 'Mouse (mm39)'},
-        {'id': 'macaque_rheMac10', 'name': 'Macaque (rheMac10)'},
-        {'id': 'chicken_galGal6', 'name': 'Chicken (galGal6)'},
-        {'id': 'pig_susScr11', 'name': 'Pig (susScr11)'}
-    ]
-    return Response({'species': species})
+    """Get list of available species from database"""
+    from .models import Species
+    from .serializers import SpeciesSerializer
+    
+    species = Species.objects.all().order_by('species_id')
+    serializer = SpeciesSerializer(species, many=True)
+    return Response({'species': serializer.data})
 
 
 @api_view(['GET'])

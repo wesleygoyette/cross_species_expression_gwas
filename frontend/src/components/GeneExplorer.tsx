@@ -511,7 +511,7 @@ export function GeneExplorer() {
             case 'low':
                 return <Badge className="bg-[var(--data-orange)]/10 text-[var(--data-orange)] border-[var(--data-orange)]/20">Limited</Badge>;
             case 'none':
-                return <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">Unavailable</Badge>;
+                return <Badge className="bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700">Unavailable</Badge>;
         }
     };
 
@@ -754,12 +754,12 @@ export function GeneExplorer() {
                                             </Tooltip>
                                         </TooltipProvider>
                                     </div>
-                                    
+
                                     <div className="space-y-3">
                                         {['Human', 'Mouse', 'Pig'].map((species) => {
                                             const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
                                             const hasData = speciesData !== null;
-                                            
+
                                             return (
                                                 <div key={species} className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
@@ -768,7 +768,7 @@ export function GeneExplorer() {
                                                             checked={selectedSpecies.includes(species)}
                                                             onCheckedChange={() => handleSpeciesToggle(species)}
                                                         />
-                                                        <label 
+                                                        <label
                                                             htmlFor={`species-${species.toLowerCase()}`}
                                                             className="text-sm font-medium text-foreground cursor-pointer"
                                                         >
@@ -778,7 +778,7 @@ export function GeneExplorer() {
                                                             </span>
                                                         </label>
                                                     </div>
-                                                    
+
                                                     <div className="flex items-center gap-2">
                                                         {hasData ? (
                                                             <Badge variant="outline" className="text-xs text-green-600 border-green-600">
@@ -794,7 +794,7 @@ export function GeneExplorer() {
                                             );
                                         })}
                                     </div>
-                                    
+
                                     {selectedSpecies.length === 0 && (
                                         <Alert className="bg-orange-50 border-orange-200">
                                             <AlertCircle className="h-4 w-4 text-orange-600" />
@@ -1077,7 +1077,7 @@ export function GeneExplorer() {
                                                     <Info className="w-3 h-3" />
                                                     Use Up/Down arrows to zoom, Left/Right arrows to pan, Ctrl/Cmd + 0 to reset
                                                 </div>
-                                                
+
                                                 {selectedSpecies.length === 0 ? (
                                                     <Alert className="bg-orange-50 border-orange-200">
                                                         <AlertCircle className="h-4 w-4 text-orange-600" />
@@ -1100,248 +1100,248 @@ export function GeneExplorer() {
                                                                 if (!aHasData && bHasData) return 1;
                                                                 return 0; // Keep original order for items with same data status
                                                             })
-                                                    .map((species, idx) => {
-                                                        // Map species to their respective data
-                                                        const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
-                                                        const hasData = speciesData !== null;
-                                                        const identity = species === 'Human' ? 100 : species === 'Mouse' ? 87 : 79;
+                                                            .map((species, idx) => {
+                                                                // Map species to their respective data
+                                                                const speciesData = species === 'Human' ? apiData : species === 'Mouse' ? mouseData : pigData;
+                                                                const hasData = speciesData !== null;
+                                                                const identity = species === 'Human' ? 100 : species === 'Mouse' ? 87 : 79;
 
-                                                        // Calculate gene position within current view - gene positioned at center of base window
-                                                        const geneStart = 0.2 * baseWindowSize; // Gene starts at 20% of base window
-                                                        const geneEnd = 0.8 * baseWindowSize; // Gene ends at 80% of base window
-                                                        const geneLeftPercent = getScreenPosition(geneStart);
-                                                        const geneRightPercent = getScreenPosition(geneEnd);
-                                                        const geneWidthPercent = geneRightPercent - geneLeftPercent;
+                                                                // Calculate gene position within current view - gene positioned at center of base window
+                                                                const geneStart = 0.2 * baseWindowSize; // Gene starts at 20% of base window
+                                                                const geneEnd = 0.8 * baseWindowSize; // Gene ends at 80% of base window
+                                                                const geneLeftPercent = getScreenPosition(geneStart);
+                                                                const geneRightPercent = getScreenPosition(geneEnd);
+                                                                const geneWidthPercent = geneRightPercent - geneLeftPercent;
 
-                                                        return (
-                                                            <div key={species} className="space-y-2">
-                                                                <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <h4 className="text-sm font-medium text-foreground">
-                                                                            {species}
-                                                                            <span className="text-xs text-muted-foreground font-normal ml-1.5">
-                                                                                ({species === 'Human' ? 'Homo sapiens' : species === 'Mouse' ? 'Mus musculus' : 'Sus scrofa'})
-                                                                            </span>
-                                                                        </h4>
-                                                                        {!hasData && (
-                                                                            <Badge variant="outline" className="text-xs text-muted-foreground">
-                                                                                No data
-                                                                            </Badge>
-                                                                        )}
-                                                                    </div>
-                                                                    {/* <Badge variant="secondary" className="text-xs">
+                                                                return (
+                                                                    <div key={species} className="space-y-2">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <h4 className="text-sm font-medium text-foreground">
+                                                                                    {species}
+                                                                                    <span className="text-xs text-muted-foreground font-normal ml-1.5">
+                                                                                        ({species === 'Human' ? 'Homo sapiens' : species === 'Mouse' ? 'Mus musculus' : 'Sus scrofa'})
+                                                                                    </span>
+                                                                                </h4>
+                                                                                {!hasData && (
+                                                                                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                                                        No data
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </div>
+                                                                            {/* <Badge variant="secondary" className="text-xs">
                                                                     {identity}% sequence identity
                                                                 </Badge> */}
-                                                                </div>                                                            <div
-                                                                    className={`h-32 bg-secondary/20 rounded border border-border relative overflow-hidden transition-all duration-200 ${!hasData ? 'opacity-40' : ''}`}
-                                                                >
-                                                                    {hasData ? (
-                                                                        <>
-                                                                            {/* Genomic coordinates ruler */}
-                                                                            <div className="absolute top-0 left-0 right-0 h-6 border-b border-border/50 bg-secondary/10">
-                                                                                <div className="flex justify-between px-2 h-full items-center text-[10px] text-muted-foreground font-mono">
-                                                                                    {Array.from({ length: Math.min(11, Math.ceil(zoomLevel * 5)) }).map((_, i) => {
-                                                                                        const tickPosition = (i / Math.min(10, Math.ceil(zoomLevel * 5) - 1)) * 100;
-                                                                                        const genomicPos = geneCoords.start + clampedViewStart + (currentWindowSize * i / Math.min(10, Math.ceil(zoomLevel * 5) - 1));
-                                                                                        return (
-                                                                                            <div key={i} className="flex flex-col items-center" style={{ left: `${tickPosition}%`, position: 'absolute' }}>
-                                                                                                <div className="w-px h-2 bg-border" />
-                                                                                                {zoomLevel >= 2 && (
-                                                                                                    <span className="text-[8px] mt-0.5">
-                                                                                                        {(genomicPos / 1000000).toFixed(3)}
-                                                                                                    </span>
-                                                                                                )}
-                                                                                            </div>
-                                                                                        );
-                                                                                    })}
-                                                                                </div>
-                                                                            </div>                                                                        {/* Gene body - responsive to zoom and pan */}
-                                                                            {geneLeftPercent < 100 && geneRightPercent > 0 && (
-                                                                                <div
-                                                                                    className="absolute top-12 h-6 bg-primary/60 rounded border border-primary flex items-center justify-center transition-all duration-200"
-                                                                                    style={{
-                                                                                        left: `${Math.max(0, geneLeftPercent)}%`,
-                                                                                        width: `${Math.min(100, geneRightPercent) - Math.max(0, geneLeftPercent)}%`
-                                                                                    }}
-                                                                                >
-                                                                                    <span className="text-[10px] font-mono text-primary-foreground">
-                                                                                        {selectedGene}
-                                                                                    </span>
-                                                                                </div>
-                                                                            )}
-
-                                                                            {/* Exons - positioned within the gene and responsive to zoom */}
-                                                                            {zoomLevel >= 2 && geneLeftPercent < 100 && geneRightPercent > 0 &&
-                                                                                [0.3, 0.4, 0.6, 0.7].map((relPos, i) => {
-                                                                                    const exonPos = relPos * baseWindowSize;
-                                                                                    const exonScreenPos = getScreenPosition(exonPos);
-                                                                                    return exonScreenPos >= 0 && exonScreenPos <= 100 ? (
-                                                                                        <div
-                                                                                            key={i}
-                                                                                            className="absolute top-12 h-6 bg-primary rounded transition-all duration-200"
-                                                                                            style={{
-                                                                                                left: `${exonScreenPos}%`,
-                                                                                                width: `${Math.max(1, 3 / zoomLevel)}%`,
-                                                                                                opacity: 0.9
-                                                                                            }}
-                                                                                        />
-                                                                                    ) : null;
-                                                                                })
-                                                                            }
-
-                                                                            {/* Enhancers - distributed around gene and zoom-responsive */}
-                                                                            {speciesData ? (
-                                                                                // Render real enhancers from API
-                                                                                speciesData.enhancers.slice(0, 50).map((enhancer, i) => {
-                                                                                    const enhancerPos = enhancer.start - speciesData.gene.start;
-                                                                                    const enhancerScreenPos = getScreenPosition(enhancerPos);
-                                                                                    const hasScore = enhancer.score !== null && enhancer.score !== undefined;
-
-                                                                                    return enhancerScreenPos >= -5 && enhancerScreenPos <= 105 ? (
-                                                                                        <TooltipProvider key={enhancer.enh_id}>
-                                                                                            <Tooltip>
-                                                                                                <TooltipTrigger asChild>
-                                                                                                    <div
-                                                                                                        className={`absolute top-8 rounded-full cursor-help transition-all duration-200 ${hasScore ? 'bg-[var(--data-orange)]' : 'bg-[var(--data-orange)]/30'
-                                                                                                            }`}
-                                                                                                        style={{
-                                                                                                            left: `${enhancerScreenPos}%`,
-                                                                                                            width: `${Math.max(2, 4 / Math.sqrt(zoomLevel))}px`,
-                                                                                                            height: `${Math.min(64, 32 + (zoomLevel * 8))}px`,
-                                                                                                        }}
-                                                                                                    />
-                                                                                                </TooltipTrigger>
-                                                                                                <TooltipContent>
-                                                                                                    <div className="text-xs space-y-1">
-                                                                                                        <p className="font-mono text-primary-foreground">Enhancer #{enhancer.enh_id}</p>
-                                                                                                        <p className="text-primary-foreground">
-                                                                                                            {enhancer.chrom}:{enhancer.start.toLocaleString()}-{enhancer.end.toLocaleString()}
-                                                                                                        </p>
-                                                                                                        {hasScore && (
-                                                                                                            <p className="text-primary-foreground">
-                                                                                                                Score: {typeof enhancer.score === 'number' ? enhancer.score.toFixed(2) : Number(enhancer.score).toFixed(2)}
-                                                                                                            </p>
-                                                                                                        )}
-                                                                                                        {enhancer.tissue && (
-                                                                                                            <p className="text-primary-foreground">
-                                                                                                                Tissue: {enhancer.tissue}
-                                                                                                            </p>
-                                                                                                        )}
-                                                                                                        {enhancer.class_name && (
-                                                                                                            <Badge variant="outline" className="text-xs text-primary-foreground border-primary-foreground">
-                                                                                                                {enhancer.class_name}
-                                                                                                            </Badge>
+                                                                        </div>                                                            <div
+                                                                            className={`h-32 bg-secondary/20 rounded border border-border relative overflow-hidden transition-all duration-200 ${!hasData ? 'opacity-40' : ''}`}
+                                                                        >
+                                                                            {hasData ? (
+                                                                                <>
+                                                                                    {/* Genomic coordinates ruler */}
+                                                                                    <div className="absolute top-0 left-0 right-0 h-6 border-b border-border/50 bg-secondary/10">
+                                                                                        <div className="flex justify-between px-2 h-full items-center text-[10px] text-muted-foreground font-mono">
+                                                                                            {Array.from({ length: Math.min(11, Math.ceil(zoomLevel * 5)) }).map((_, i) => {
+                                                                                                const tickPosition = (i / Math.min(10, Math.ceil(zoomLevel * 5) - 1)) * 100;
+                                                                                                const genomicPos = geneCoords.start + clampedViewStart + (currentWindowSize * i / Math.min(10, Math.ceil(zoomLevel * 5) - 1));
+                                                                                                return (
+                                                                                                    <div key={i} className="flex flex-col items-center" style={{ left: `${tickPosition}%`, position: 'absolute' }}>
+                                                                                                        <div className="w-px h-2 bg-border" />
+                                                                                                        {zoomLevel >= 2 && (
+                                                                                                            <span className="text-[8px] mt-0.5">
+                                                                                                                {(genomicPos / 1000000).toFixed(3)}
+                                                                                                            </span>
                                                                                                         )}
                                                                                                     </div>
-                                                                                                </TooltipContent>
-                                                                                            </Tooltip>
-                                                                                        </TooltipProvider>
-                                                                                    ) : null;
-                                                                                })
-                                                                            ) : null}
+                                                                                                );
+                                                                                            })}
+                                                                                        </div>
+                                                                                    </div>                                                                        {/* Gene body - responsive to zoom and pan */}
+                                                                                    {geneLeftPercent < 100 && geneRightPercent > 0 && (
+                                                                                        <div
+                                                                                            className="absolute top-12 h-6 bg-primary/60 rounded border border-primary flex items-center justify-center transition-all duration-200"
+                                                                                            style={{
+                                                                                                left: `${Math.max(0, geneLeftPercent)}%`,
+                                                                                                width: `${Math.min(100, geneRightPercent) - Math.max(0, geneLeftPercent)}%`
+                                                                                            }}
+                                                                                        >
+                                                                                            <span className="text-[10px] font-mono text-primary-foreground">
+                                                                                                {selectedGene}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    )}
 
-                                                                            {/* CTCF sites - from API data */}
-                                                                            {speciesData && speciesData.ctcf_sites.slice(0, 20).map((ctcf, i) => {
-                                                                                const ctcfPos = ctcf.start - speciesData.gene.start;
-                                                                                const ctcfScreenPos = getScreenPosition(ctcfPos);
-
-                                                                                return ctcfScreenPos >= -5 && ctcfScreenPos <= 105 ? (
-                                                                                    <TooltipProvider key={`ctcf-${ctcf.site_id}`}>
-                                                                                        <Tooltip>
-                                                                                            <TooltipTrigger asChild>
+                                                                                    {/* Exons - positioned within the gene and responsive to zoom */}
+                                                                                    {zoomLevel >= 2 && geneLeftPercent < 100 && geneRightPercent > 0 &&
+                                                                                        [0.3, 0.4, 0.6, 0.7].map((relPos, i) => {
+                                                                                            const exonPos = relPos * baseWindowSize;
+                                                                                            const exonScreenPos = getScreenPosition(exonPos);
+                                                                                            return exonScreenPos >= 0 && exonScreenPos <= 100 ? (
                                                                                                 <div
-                                                                                                    className="absolute top-10 bg-[var(--genomic-green)]/60 rounded cursor-help transition-all duration-200"
+                                                                                                    key={i}
+                                                                                                    className="absolute top-12 h-6 bg-primary rounded transition-all duration-200"
                                                                                                     style={{
-                                                                                                        left: `${ctcfScreenPos}%`,
-                                                                                                        width: `${Math.max(2, 6 / Math.sqrt(zoomLevel))}px`,
-                                                                                                        height: `${Math.min(48, 24 + (zoomLevel * 6))}px`,
+                                                                                                        left: `${exonScreenPos}%`,
+                                                                                                        width: `${Math.max(1, 3 / zoomLevel)}%`,
+                                                                                                        opacity: 0.9
                                                                                                     }}
                                                                                                 />
-                                                                                            </TooltipTrigger>
-                                                                                            <TooltipContent>
-                                                                                                <div className="text-xs space-y-1">
-                                                                                                    <p className="font-mono text-primary-foreground">CTCF Site #{ctcf.site_id}</p>
-                                                                                                    <p className="text-primary-foreground">
-                                                                                                        {ctcf.chrom}:{ctcf.start.toLocaleString()}-{ctcf.end.toLocaleString()}
-                                                                                                    </p>
-                                                                                                    {ctcf.score && (
-                                                                                                        <p className="text-primary-foreground">
-                                                                                                            Score: {typeof ctcf.score === 'number' ? ctcf.score.toFixed(2) : Number(ctcf.score).toFixed(2)}
-                                                                                                        </p>
-                                                                                                    )}
-                                                                                                    {ctcf.cons_class && (
-                                                                                                        <p className="text-primary-foreground">
-                                                                                                            Conservation: {ctcf.cons_class}
-                                                                                                        </p>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            </TooltipContent>
-                                                                                        </Tooltip>
-                                                                                    </TooltipProvider>
-                                                                                ) : null;
-                                                                            })}
+                                                                                            ) : null;
+                                                                                        })
+                                                                                    }
 
-                                                                            {/* GWAS SNPs - from API data */}
-                                                                            {speciesData && speciesData.gwas_snps.slice(0, 10).map((snp, i) => {
-                                                                                const snpPos = snp.pos - speciesData.gene.start;
-                                                                                const snpScreenPos = getScreenPosition(snpPos);
+                                                                                    {/* Enhancers - distributed around gene and zoom-responsive */}
+                                                                                    {speciesData ? (
+                                                                                        // Render real enhancers from API
+                                                                                        speciesData.enhancers.slice(0, 50).map((enhancer, i) => {
+                                                                                            const enhancerPos = enhancer.start - speciesData.gene.start;
+                                                                                            const enhancerScreenPos = getScreenPosition(enhancerPos);
+                                                                                            const hasScore = enhancer.score !== null && enhancer.score !== undefined;
 
-                                                                                return snpScreenPos >= -5 && snpScreenPos <= 105 ? (
-                                                                                    <TooltipProvider key={`snp-${snp.snp_id}`}>
-                                                                                        <Tooltip>
-                                                                                            <TooltipTrigger asChild>
-                                                                                                <div
-                                                                                                    className="absolute top-7 bg-destructive rounded-full cursor-help border-2 border-background transition-all duration-200"
-                                                                                                    style={{
-                                                                                                        left: `${snpScreenPos}%`,
-                                                                                                        width: '8px',
-                                                                                                        height: '8px',
-                                                                                                    }}
-                                                                                                />
-                                                                                            </TooltipTrigger>
-                                                                                            <TooltipContent>
-                                                                                                <div className="text-xs space-y-1">
-                                                                                                    <p className="font-mono text-primary-foreground">{snp.rsid || `SNP ${snp.snp_id}`}</p>
-                                                                                                    <p className="text-primary-foreground">
-                                                                                                        {snp.chrom}:{snp.pos.toLocaleString()}
-                                                                                                    </p>
-                                                                                                    {snp.trait && (
-                                                                                                        <p className="text-primary-foreground">
-                                                                                                            Trait: {snp.trait}
-                                                                                                        </p>
-                                                                                                    )}
-                                                                                                    {snp.pval && (
-                                                                                                        <p className="text-primary-foreground">
-                                                                                                            p-value: {snp.pval.toExponential(2)}
-                                                                                                        </p>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            </TooltipContent>
-                                                                                        </Tooltip>
-                                                                                    </TooltipProvider>
-                                                                                ) : null;
-                                                                            })}
+                                                                                            return enhancerScreenPos >= -5 && enhancerScreenPos <= 105 ? (
+                                                                                                <TooltipProvider key={enhancer.enh_id}>
+                                                                                                    <Tooltip>
+                                                                                                        <TooltipTrigger asChild>
+                                                                                                            <div
+                                                                                                                className={`absolute top-8 rounded-full cursor-help transition-all duration-200 ${hasScore ? 'bg-[var(--data-orange)]' : 'bg-[var(--data-orange)]/30'
+                                                                                                                    }`}
+                                                                                                                style={{
+                                                                                                                    left: `${enhancerScreenPos}%`,
+                                                                                                                    width: `${Math.max(2, 4 / Math.sqrt(zoomLevel))}px`,
+                                                                                                                    height: `${Math.min(64, 32 + (zoomLevel * 8))}px`,
+                                                                                                                }}
+                                                                                                            />
+                                                                                                        </TooltipTrigger>
+                                                                                                        <TooltipContent>
+                                                                                                            <div className="text-xs space-y-1">
+                                                                                                                <p className="font-mono text-primary-foreground">Enhancer #{enhancer.enh_id}</p>
+                                                                                                                <p className="text-primary-foreground">
+                                                                                                                    {enhancer.chrom}:{enhancer.start.toLocaleString()}-{enhancer.end.toLocaleString()}
+                                                                                                                </p>
+                                                                                                                {hasScore && (
+                                                                                                                    <p className="text-primary-foreground">
+                                                                                                                        Score: {typeof enhancer.score === 'number' ? enhancer.score.toFixed(2) : Number(enhancer.score).toFixed(2)}
+                                                                                                                    </p>
+                                                                                                                )}
+                                                                                                                {enhancer.tissue && (
+                                                                                                                    <p className="text-primary-foreground">
+                                                                                                                        Tissue: {enhancer.tissue}
+                                                                                                                    </p>
+                                                                                                                )}
+                                                                                                                {enhancer.class_name && (
+                                                                                                                    <Badge variant="outline" className="text-xs text-primary-foreground border-primary-foreground">
+                                                                                                                        {enhancer.class_name}
+                                                                                                                    </Badge>
+                                                                                                                )}
+                                                                                                            </div>
+                                                                                                        </TooltipContent>
+                                                                                                    </Tooltip>
+                                                                                                </TooltipProvider>
+                                                                                            ) : null;
+                                                                                        })
+                                                                                    ) : null}
 
-                                                                            {/* Genomic coordinate scale */}
-                                                                            <div className="absolute bottom-1 left-0 right-0 flex justify-between px-2 text-[10px] text-muted-foreground font-mono">
-                                                                                <span>
-                                                                                    {speciesData.gene.chrom}:{((geneCoords.start + clampedViewStart) / 1000000).toFixed(2)} Mb
-                                                                                </span>
-                                                                                <span>
-                                                                                    {speciesData.gene.chrom}:{((geneCoords.start + clampedViewStart + currentWindowSize) / 1000000).toFixed(2)} Mb
-                                                                                </span>
-                                                                            </div>
-                                                                        </>
-                                                                    ) : (
-                                                                        <div className="absolute inset-0 flex items-center justify-center">
-                                                                            <p className="text-xs text-muted-foreground">No data available for {species}</p>
+                                                                                    {/* CTCF sites - from API data */}
+                                                                                    {speciesData && speciesData.ctcf_sites.slice(0, 20).map((ctcf, i) => {
+                                                                                        const ctcfPos = ctcf.start - speciesData.gene.start;
+                                                                                        const ctcfScreenPos = getScreenPosition(ctcfPos);
+
+                                                                                        return ctcfScreenPos >= -5 && ctcfScreenPos <= 105 ? (
+                                                                                            <TooltipProvider key={`ctcf-${ctcf.site_id}`}>
+                                                                                                <Tooltip>
+                                                                                                    <TooltipTrigger asChild>
+                                                                                                        <div
+                                                                                                            className="absolute top-10 bg-[var(--genomic-green)]/60 rounded cursor-help transition-all duration-200"
+                                                                                                            style={{
+                                                                                                                left: `${ctcfScreenPos}%`,
+                                                                                                                width: `${Math.max(2, 6 / Math.sqrt(zoomLevel))}px`,
+                                                                                                                height: `${Math.min(48, 24 + (zoomLevel * 6))}px`,
+                                                                                                            }}
+                                                                                                        />
+                                                                                                    </TooltipTrigger>
+                                                                                                    <TooltipContent>
+                                                                                                        <div className="text-xs space-y-1">
+                                                                                                            <p className="font-mono text-primary-foreground">CTCF Site #{ctcf.site_id}</p>
+                                                                                                            <p className="text-primary-foreground">
+                                                                                                                {ctcf.chrom}:{ctcf.start.toLocaleString()}-{ctcf.end.toLocaleString()}
+                                                                                                            </p>
+                                                                                                            {ctcf.score && (
+                                                                                                                <p className="text-primary-foreground">
+                                                                                                                    Score: {typeof ctcf.score === 'number' ? ctcf.score.toFixed(2) : Number(ctcf.score).toFixed(2)}
+                                                                                                                </p>
+                                                                                                            )}
+                                                                                                            {ctcf.cons_class && (
+                                                                                                                <p className="text-primary-foreground">
+                                                                                                                    Conservation: {ctcf.cons_class}
+                                                                                                                </p>
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                    </TooltipContent>
+                                                                                                </Tooltip>
+                                                                                            </TooltipProvider>
+                                                                                        ) : null;
+                                                                                    })}
+
+                                                                                    {/* GWAS SNPs - from API data */}
+                                                                                    {speciesData && speciesData.gwas_snps.slice(0, 10).map((snp, i) => {
+                                                                                        const snpPos = snp.pos - speciesData.gene.start;
+                                                                                        const snpScreenPos = getScreenPosition(snpPos);
+
+                                                                                        return snpScreenPos >= -5 && snpScreenPos <= 105 ? (
+                                                                                            <TooltipProvider key={`snp-${snp.snp_id}`}>
+                                                                                                <Tooltip>
+                                                                                                    <TooltipTrigger asChild>
+                                                                                                        <div
+                                                                                                            className="absolute top-7 bg-destructive rounded-full cursor-help border-2 border-background transition-all duration-200"
+                                                                                                            style={{
+                                                                                                                left: `${snpScreenPos}%`,
+                                                                                                                width: '8px',
+                                                                                                                height: '8px',
+                                                                                                            }}
+                                                                                                        />
+                                                                                                    </TooltipTrigger>
+                                                                                                    <TooltipContent>
+                                                                                                        <div className="text-xs space-y-1">
+                                                                                                            <p className="font-mono text-primary-foreground">{snp.rsid || `SNP ${snp.snp_id}`}</p>
+                                                                                                            <p className="text-primary-foreground">
+                                                                                                                {snp.chrom}:{snp.pos.toLocaleString()}
+                                                                                                            </p>
+                                                                                                            {snp.trait && (
+                                                                                                                <p className="text-primary-foreground">
+                                                                                                                    Trait: {snp.trait}
+                                                                                                                </p>
+                                                                                                            )}
+                                                                                                            {snp.pval && (
+                                                                                                                <p className="text-primary-foreground">
+                                                                                                                    p-value: {snp.pval.toExponential(2)}
+                                                                                                                </p>
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                    </TooltipContent>
+                                                                                                </Tooltip>
+                                                                                            </TooltipProvider>
+                                                                                        ) : null;
+                                                                                    })}
+
+                                                                                    {/* Genomic coordinate scale */}
+                                                                                    <div className="absolute bottom-1 left-0 right-0 flex justify-between px-2 text-[10px] text-muted-foreground font-mono">
+                                                                                        <span>
+                                                                                            {speciesData.gene.chrom}:{((geneCoords.start + clampedViewStart) / 1000000).toFixed(2)} Mb
+                                                                                        </span>
+                                                                                        <span>
+                                                                                            {speciesData.gene.chrom}:{((geneCoords.start + clampedViewStart + currentWindowSize) / 1000000).toFixed(2)} Mb
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </>
+                                                                            ) : (
+                                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                                    <p className="text-xs text-muted-foreground">No data available for {species}</p>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                    </>
                                                 )}
                                             </div>
 

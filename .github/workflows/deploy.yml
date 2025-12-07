@@ -204,7 +204,7 @@ jobs:
           # Deploy with backup images
           export BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:backup
           export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:backup
-          export SQLITE_DB_PATH=${{ secrets.SQLITE_DB_PATH }}
+          export DATABASE_PATH=${{ secrets.DATABASE_PATH }}
           docker compose -f docker-compose.prod.yml up -d
           
           # Wait for rollback to be healthy

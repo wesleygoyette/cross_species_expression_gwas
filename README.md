@@ -288,7 +288,7 @@ Key production variables:
 - `SECRET_KEY`: Django secret key (⚠️ **Must be set in production!**)
 - `ALLOWED_HOSTS`: Production domain names (comma-separated)
 - `CORS_ALLOWED_ORIGINS`: Production frontend URLs (comma-separated)
-- `SQLITE_DB_PATH`: Path on host machine where SQLite database is located
+- `DATABASE_PATH`: Path on host machine where SQLite database is located
 - `DATABASE_PATH`: Path inside container where Django will access the database
 
 **Note**: The SQLite database is mounted as **read-only** in production to prevent accidental writes.
@@ -422,7 +422,7 @@ SECRET_KEY              # Django secret key
 DEBUG                   # Debug mode setting (False in production)
 ALLOWED_HOSTS           # Django allowed hosts
 CORS_ALLOWED_ORIGINS    # CORS configuration
-SQLITE_DB_PATH          # Path to SQLite database on host
+DATABASE_PATH          # Path to SQLite database on host
 DATABASE_PATH           # Path to database inside container
 ```
 

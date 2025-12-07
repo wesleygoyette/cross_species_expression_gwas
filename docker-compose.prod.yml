@@ -12,6 +12,8 @@ services:
     volumes:
       - backend_static:/app/staticfiles
       - ${DATABASE_PATH}:/app/data
+    # Ensure proper permissions for database access
+    user: "1000:1000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s

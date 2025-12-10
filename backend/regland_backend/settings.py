@@ -165,7 +165,19 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+# Get CORS origins from environment, with appropriate defaults for dev vs production
+cors_origins_str = os.getenv('CORS_ALLOWED_ORIGINS', '')
+if cors_origins_str:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_str.split(',')]
+else:
+    # Default development origins
+    CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost', 'http://127.0.0.1']
+    # Add production origins if not in debug mode
+    if not DEBUG:
+        CORS_ALLOWED_ORIGINS.extend([
+            'https://crossgenome.site',
+            'https://www.crossgenome.site',
+        ])
 
 CORS_ALLOW_CREDENTIALS = True
 

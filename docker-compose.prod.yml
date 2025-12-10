@@ -5,12 +5,13 @@ services:
       - "8000"
     environment:
       - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-      - DATABASE_PATH=${DATABASE_PATH}
+      - SECRET_KEY=${SECRET_KEY:?error}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:?error}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:?error}
+      - DATABASE_PATH=${DATABASE_PATH:?error}
     volumes:
       - backend_static:/app/staticfiles
-      - ${DATABASE_PATH}:/app/data
+      - ${DATABASE_PATH:?error}:/app/data
     # Ensure proper permissions for database access
     user: "1000:1000"
     healthcheck:

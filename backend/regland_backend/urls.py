@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 def api_root(request):
     return JsonResponse({
@@ -30,6 +31,7 @@ def api_root(request):
         }
     })
 
+@csrf_exempt
 def health_check(request):
     """Health check endpoint for monitoring"""
     return JsonResponse({

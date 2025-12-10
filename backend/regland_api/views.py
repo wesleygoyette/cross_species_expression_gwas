@@ -1,4 +1,5 @@
 from django.db import connection
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -435,6 +436,7 @@ def ctcf_analysis(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@csrf_exempt
 @api_view(['GET'])
 def health_check(request):
     """Health check endpoint with database connectivity verification"""

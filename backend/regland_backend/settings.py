@@ -28,6 +28,11 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-change-me-in-production'
+    else:
+        raise ValueError("SECRET_KEY environment variable must be set in production")
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
 
@@ -85,25 +90,21 @@ WSGI_APPLICATION = 'regland_backend.wsgi.application'
 
 # SQLite database configuration
 # In production, the database is mounted as read-only for data integrity
-DATABASE_PATH = os.getenv('DATABASE_PATH', None)
-if DATABASE_PATH is None:
-    # Default to database in the database directory
-    DB_FILE = BASE_DIR.parent / 'database' / 'regland.sqlite'
-elif os.path.isabs(DATABASE_PATH):
-    # If path doesn't end with .sqlite, treat as directory and append filename
-    if not DATABASE_PATH.endswith('.sqlite'):
-        DB_FILE = Path(DATABASE_PATH) / 'regland.sqlite'
-    else:
-        # Use as-is (full path to file)
-        DB_FILE = Path(DATABASE_PATH)
+DATABASE_PATH = os.getenv('DATABASE_PATH', str(BASE_DIR / '../database/regland.sqlite'))
+# If DATABASE_PATH is absolute, use it directly; otherwise, resolve relative to BASE_DIR
+if os.path.isabs(DATABASE_PATH):
+    DB_FILE = DATABASE_PATH
 else:
-    # Resolve relative paths from BASE_DIR
-    DB_FILE = BASE_DIR / DATABASE_PATH
+    DB_FILE = BASE_DIR / Path(DATABASE_PATH)
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': str(DB_FILE),
+        'NAME': DB_FILE,
+        'OPTIONS': {
+            # Set journal mode to WAL for better concurrent read performance
+            'init_command': "PRAGMA query_only = OFF;",  # Allows migrations on startup
+        } if DEBUG else {},
     }
 }
 
@@ -169,21 +170,12 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-# Get CORS origins from environment, with appropriate defaults for dev vs production
-cors_origins_str = os.getenv('CORS_ALLOWED_ORIGINS', '')
-if cors_origins_str:
-    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_str.split(',')]
-else:
-    # Default development origins
-    CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost', 'http://127.0.0.1']
-    # Add production origins if not in debug mode
-    if not DEBUG:
-        CORS_ALLOWED_ORIGINS.extend([
-            'https://crossgenome.site',
-            'https://www.crossgenome.site',
-        ])
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,https://crossgenome.site,https://www.crossgenome.site,http://crossgenome.site,http://www.crossgenome.site').split(',')
 
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF settings - exempt API endpoints
+CSRF_TRUSTED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,https://crossgenome.site,https://www.crossgenome.site,http://crossgenome.site,http://www.crossgenome.site').split(',')
 
 # Security settings for production
 if not DEBUG:

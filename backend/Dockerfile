@@ -22,9 +22,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . .
 
-# Create a non-root user with specific UID/GID to match host if needed
-# Using UID 1000 (common for first non-root user)
-RUN adduser --disabled-password --gecos '' --uid 1000 appuser && chown -R appuser /app
+# Create a non-root user
+RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
 USER appuser
 
 # Collect static files
@@ -33,11 +32,6 @@ RUN python manage.py collectstatic --noinput --settings=regland_backend.settings
 # Create startup script without migrations (database is read-only in production)
 RUN echo '#!/bin/bash\n\
 set -e\n\
-# Ensure data directory exists and has proper permissions\n\
-if [ -d "/app/data" ]; then\n\
-  # Attempt to fix permissions if we have write access\n\
-  chmod -R u+rw /app/data 2>/dev/null || true\n\
-fi\n\
 echo "Validating Django project..."\n\
 python manage.py check --settings=regland_backend.settings\n\
 echo "Starting gunicorn server..."\n\

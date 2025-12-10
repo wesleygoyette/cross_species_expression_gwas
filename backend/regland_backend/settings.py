@@ -90,13 +90,12 @@ if DATABASE_PATH is None:
     # Default to database in the database directory
     DB_FILE = BASE_DIR.parent / 'database' / 'regland.sqlite'
 elif os.path.isabs(DATABASE_PATH):
-    # If it's a directory, append the database filename
-    db_path = Path(DATABASE_PATH)
-    if db_path.is_dir() or DATABASE_PATH.endswith('/'):
-        DB_FILE = db_path / 'regland.sqlite'
+    # If path doesn't end with .sqlite, treat as directory and append filename
+    if not DATABASE_PATH.endswith('.sqlite'):
+        DB_FILE = Path(DATABASE_PATH) / 'regland.sqlite'
     else:
         # Use as-is (full path to file)
-        DB_FILE = db_path
+        DB_FILE = Path(DATABASE_PATH)
 else:
     # Resolve relative paths from BASE_DIR
     DB_FILE = BASE_DIR / DATABASE_PATH

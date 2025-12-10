@@ -159,25 +159,28 @@ jobs:
     
     - name: Deploy with Docker Compose
       run: |
-        export BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
-        export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
-        export SECRET_KEY="${{ secrets.SECRET_KEY }}"
-        export ALLOWED_HOSTS="${{ secrets.ALLOWED_HOSTS }}"
-        export CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
-        export DATABASE_PATH="${{ secrets.DATABASE_PATH }}"
+        # Create .env file with secrets
+        cat > .env << EOF
+        BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
+        FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
+        SECRET_KEY=${{ secrets.SECRET_KEY }}
+        ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
+        CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
+        DATABASE_PATH=${{ secrets.DATABASE_PATH }}
+        EOF
         
-        # Validate required environment variables
-        if [ -z "$SECRET_KEY" ]; then
+        # Validate required variables
+        if ! grep -q "^SECRET_KEY=" .env || [ -z "$(grep '^SECRET_KEY=' .env | cut -d= -f2)" ]; then
           echo "ERROR: SECRET_KEY secret is not set!"
           exit 1
         fi
-        if [ -z "$DATABASE_PATH" ]; then
+        if ! grep -q "^DATABASE_PATH=" .env || [ -z "$(grep '^DATABASE_PATH=' .env | cut -d= -f2)" ]; then
           echo "ERROR: DATABASE_PATH secret is not set!"
           exit 1
         fi
         
-        echo "Deploying with DATABASE_PATH: $DATABASE_PATH"
-        docker compose -f docker-compose.prod.yml up -d
+        echo "Deploying with DATABASE_PATH: $(grep '^DATABASE_PATH=' .env | cut -d= -f2)"
+        docker compose --env-file .env -f docker-compose.prod.yml up -d
     
     - name: Wait for services to be healthy
       id: health_check
@@ -208,30 +211,27 @@ jobs:
           
           echo "📦 Restoring previous working deployment..."
           
-          # Restore backup environment if it exists
-          if [ -f .env.backup ]; then
-            cp .env.backup .env
-          fi
+          # Create .env file with secrets for rollback
+          cat > .env << EOF
+          BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:backup
+          FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:backup
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
+          CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
+          DATABASE_PATH=${{ secrets.DATABASE_PATH }}
+          EOF
           
-          # Deploy with backup images
-          export BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:backup
-          export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:backup
-          export SECRET_KEY="${{ secrets.SECRET_KEY }}"
-          export ALLOWED_HOSTS="${{ secrets.ALLOWED_HOSTS }}"
-          export CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
-          export DATABASE_PATH="${{ secrets.DATABASE_PATH }}"
-          
-          # Validate required environment variables
-          if [ -z "$SECRET_KEY" ]; then
+          # Validate required variables
+          if ! grep -q "^SECRET_KEY=" .env || [ -z "$(grep '^SECRET_KEY=' .env | cut -d= -f2)" ]; then
             echo "ERROR: SECRET_KEY secret is not set!"
             exit 1
           fi
-          if [ -z "$DATABASE_PATH" ]; then
+          if ! grep -q "^DATABASE_PATH=" .env || [ -z "$(grep '^DATABASE_PATH=' .env | cut -d= -f2)" ]; then
             echo "ERROR: DATABASE_PATH secret is not set!"
             exit 1
           fi
           
-          docker compose -f docker-compose.prod.yml up -d
+          docker compose --env-file .env -f docker-compose.prod.yml up -d
           
           # Wait for rollback to be healthy
           if timeout 180 bash -c 'until docker compose -f docker-compose.prod.yml ps | grep -q "healthy"; do sleep 5; done'; then
